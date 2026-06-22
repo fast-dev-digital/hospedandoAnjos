@@ -1,0 +1,142 @@
+Documento de Especificação de Escopo Total (PRD)
+Plataforma de Receita Recorrente e Ativo Relacional — Campanha Hospedando Anjos
+
+Cliente: Engenharia:
+
+Grupo Prisma Brasil Fast Development
+
+Data: Status:
+
+17 de Junho de 2026 Escopo Fechado (Versão Final)
+
+1. Visão Geral e Diretrizes Estratégicas
+O projeto Hospedando Anjos representa a transição estrutural do modelo de captação de recursos do Grupo Prisma Brasil. A iniciativa migra a operação de arrecadações sazonais para um ecossistema sustentável, previsível e escalável de receita recorrente de longo prazo. Trata-se do desenvolvimento de um ativo de dados relacional e financeiro permanente.
+O direcionamento técnico obedece de forma rígida a três pilares de engenharia:
+• Fricção Zero na Conversão: O fluxo completo de doação é projetado para ser executado em menos de 20 segundos, eliminando a necessidade de criação prévia de contas, cadastros de senhas ou ativações por e-mail no momento do pagamento.
+• Segurança Financeira Hardcoded: A inteligência de processamento, a segurança de chaves privadas e o consumo de webhooks criptográficos ocorrem exclusivamente dentro de um microserviço robusto desenvolvido sob medida, removendo ferramentas visuais ou low-code do coração da transação monetária.
+• Rastreabilidade de Impacto: Cada transação é etiquetada na origem com metadados para garantir que o destino escolhido pelo doador seja imutavelmente registrado, alimentando réguas de relacionamento altamente segmentadas.
+2. Engenharia de Frontend e Checkout de Etapa Única
+A interface será disponibilizada como uma Landing Page otimizada para o padrão mobile-first, hospedada diretamente na infraestrutura atual do site institucional em WordPress do cliente. O WordPress atuará exclusivamente como camada de entrega visual estática.
+2.1. Componentes da Interface
+• Grade de Âncoras de Preço: Seletores nativos pré-configurados com os valores padrão sugeridos pelo plano estratégico: R$ 20, R$ 50, R$ 100 e R$ 250 mensais.
+• Campo de Entrada Livre: Input numérico dinâmico que valida quantias personalizadas inseridas pelo usuário.
+• Seletor de Recorrência: Componente do tipo toggle/switch definido por padrão como "Doação Mensal (Recorrente)", permitindo a alternância voluntária para "Doação Avulsa (Única)".
+
+Fast Development & Grupo Prisma Brasil - Confidencial
+
+Página 1 de 6
+
+• Formulário de Coleta Mínima: Três campos de texto obrigatórios integrados diretamente na esteira: Nome Completo, E-mail e WhatsApp (com máscara de validação internacional).
+Regra de Negócio — Express Checkout: A Landing Page consumirá a biblioteca do Stripe.js para inicializar o Stripe Elements (Payment Request Button). O frontend verificará se o navegador ou dispositivo do usuário possui carteiras digitais ativas (Apple Pay ou Google Pay) via chamada assíncrona. Em caso positivo, a interface renderizará o botão de checkout expresso no topo, permitindo a autenticação biométrica do doador e eliminando a digitação manual do cartão.
+3. Arquitetura do Core Financeiro (Backend em Node.js)
+Para garantir isolamento completo de falhas e proteção contra vetores de ataque comuns em CMS (como invasões ou quebras de plugins do WordPress), toda a inteligência financeira será isolada em um microserviço dedicado construído em Node.js com TypeScript e framework Express, hospedado de maneira independente em ambiente cloud (Railway).
+3.1. Lógica do "Cadastro Invisível" Quando o doador submete o formulário ou autoriza a carteira digital, o backend Node.js consome o endpoint de criação de sessões da Stripe (stripe.checkout.sessions.create). O parâmetro mode é chaveado dinamicamente entre 'subscription' ou 'payment' baseado na escolha do usuário.
+Ao passar o e-mail coletado, a Stripe executa a validação de forma nativa: se o cliente não existir, ela cria o objeto Customer silenciosamente e tokeniza o cartão; se já existir, ela anexa a nova assinatura ao perfil histórico. O doador não precisa criar senhas.
+3.2. Payload de Inicialização e Rastreabilidade (Metadata) A identificação do projeto específico apoiado é injetada no escopo imutável da transação através do objeto de metadados da Stripe. O bloco de dados estruturado obedece ao seguinte contrato:
+metadata: { donor_name: name, donor_phone: phone, project_target: "projeto_missoes", // Identificador do Projeto X type: isRecurring ? "recorrente" : "avulsa"
+}
+
+Fast Development & Grupo Prisma Brasil - Confidencial
+
+Página 2 de 6
+
+4. Diagrama de Sequência Estrutural do Fluxo
+O diagrama abaixo ilustra o ciclo de vida completo de uma doação, detalhando a passagem de dados síncronos na camada financeira segura e o acionamento assíncrono das automações de marketing e notificação.
+
+Doador
+
+Landing Page
+
+Node.js API
+
+Stripe API
+
+1. Define Valor/Inicia Checkout
+
+2. POST /api/v1/checkout
+
+3. sessions.create(metadata)
+
+4. Retorna Session URL / Express Payload
+
+5. Valida Pagamento (Apple Pay / Google Pay / PIX)
+
+Brevo / Manychat
+
+6. Webhook (Criptografado)
+
+7. Sincroniza Cliente + Metadata no CRM Brevo 8. Aciona API Manychat (Envia Recibo e Boas-Vindas)
+
+5. Segurança Avançada e Tratamento de Webhooks
+O ponto crítico de segurança reside no receptor de eventos (Webhook Listener) configurado na rota POST /webhooks/stripe do Node.js. Para impedir ataques de injeção de falsos relatórios de sucesso, o servidor implementa a validação por assinatura digital:
+1. O servidor captura o cabeçalho HTTP stripe-signature contendo o timestamp e os hashes criptográficos da mensagem.
+2. O corpo da requisição é lido em formato estritamente bruto (Raw Body), utilizando express.raw({ type: 'application/json' }).
+3. A biblioteca oficial executa o método stripe.webhooks.constructEvent(body, sig, endpointSecret). Caso qualquer caractere tenha sido violado ou o segredo não bata, a requisição é abortada imediatamente com erro 400 Bad Request.
+
+Fast Development & Grupo Prisma Brasil - Confidencial
+
+Página 3 de 6
+
+Após a validação, a API processa os eventos do ciclo de vida:
+• checkout.session.completed: Desencadeia o fluxo de boas-vindas e inserção no CRM. • invoice.payment_failed: Dispara o fluxo de recuperação automática via e-mail e WhatsApp
+notificando falha no cartão. • customer.subscription.deleted: Altera instantaneamente o status do doador para "Inativo",
+interrompendo réguas regulares de comunicação.
+6. Ecossistema de Integrações e Otimização de Custos (Brevo)
+Substituindo o escopo preliminar baseado em HubSpot CRM Starter (cujas limitações de API e custos por escala inviabilizariam a meta de custos reduzidos do projeto), a arquitetura adota o Brevo (antigo Sendinblue) como CRM centralizador.
+O modelo de faturamento do Brevo baseia-se unicamente no volume de disparos de e-mail e não na cubagem/tamanho da base de contatos. Isso permite armazenar os 2.500 mantenedores projetados (e expandir de forma ilimitada) com custo fixo previsível e reduzido.
+A ponte de dados pós-atualização do CRM utilizará o n8n como orquestrador visual assíncrono. O n8n interceptará a criação de novos clientes e consumirá os endpoints oficiais do Manychat (/subscriber/ createSubscriber e /sending/sendFlow) para injetar o contato e disparar réguas automatizadas em canais múltiplos (WhatsApp Business API, Instagram Direct e Messenger).
+7. Gestão de Cancelamentos com Efeito Imediato
+Em conformidade com as boas práticas contratuais da operadora e visando a redução drástica de contestações administrativas (chargebacks), o sistema operará com a diretriz de Cancelamento Imediato, estruturado em duas camadas de segurança:
+7.1. Portal de Autoatendimento Billing Portal (Stripe)
+Injetado de forma dinâmica no rodapé dos e-mails transacionais e recibos gerados pelo Brevo. Ao clicar, o usuário requisita uma sessão temporária e segura via stripe.billingPortal.sessions.create utilizando o ID de cliente salvo (cus_XXX). O link mágico valida o acesso do usuário sem que ele precise de login/senha, fornecendo um painel limpo para cancelamento em um clique.
+7.2. Retenção e Desativação Automatizada via WhatsApp
+Caso o doador interaja via WhatsApp manifestando desejo de encerrar a contribuição, o Manychat inicia um fluxo automatizado de retenção passiva (propondo redução do ticket para a faixa de R$ 20/mês). Confirmada a recusa, o Manychat bate na rota segura do backend Node.js, que consome o método stripe.subscriptions.cancel(id). A assinatura morre no mesmo milissegundo, o webhook é disparado e o Brevo atualiza o status do registro em tempo real.
+
+Fast Development & Grupo Prisma Brasil - Confidencial
+
+Página 4 de 6
+
+8. Dimensionamento de Esforço e Cronograma de Entrega
+A tabela abaixo discrimina a alocação de esforço técnico estimada para a execução das sprints de engenharia, potencializada pelo uso avançado de ferramentas de IA (Cursor, Copilot e Gemini API) para aceleração de código-base e geração de testes unitários.
+
+Sprint / Módulo Sprint 1: Frontend
+Sprint 2: Core API Sprint 3: CRM & Ops
+Sprint 4: QA & Deploy Total Consolidado
+
+Escopo Técnico de Entrega
+Criação da Landing Page mobile-first no WordPress, parametrização do Stripe.js, injeção de tags do Google Analytics/Tag Manager e teste da chamada de carteiras digitais.
+Desenvolvimento do servidor Node.js (TypeScript), isolamento de variáveis de ambiente, criação do endpoint de Checkout Sessions e o listener blindado de Webhooks.
+Modelagem de dados no CRM Brevo, criação de propriedades personalizadas de rastreio de metas, configuração do servidor n8n e mapeamento dos endpoints do Manychat.
+Testes de estresse fim-a-fim (E2E) simulando falhas de pagamento, conexões caídas, homologação do Apple Pay em produção e deploy em pipeline contínuo no Railway.
+Tempo de Execução Líquida (Estimativa de 2 a 3 semanas de desenvolvimento)
+
+Esforço (Horas) 08 a 12 horas
+15 a 20 horas 06 a 10 horas
+10 a 15 horas 39 a 57 horas
+
+9. Proposta de Investimento e Sustentação Técnica
+Considerando a complexidade da infraestrutura arquitetada e os altos padrões de segurança aplicados ao fluxo de processamento de capitais, a proposta financeira divide-se entre a entrega do ativo tecnológico e sua manutenção pós-lançamento.
+
+Modelo de Contratação
+Setup de Desenvolvimento (Parcelamento padrão: 50% / 50%)
+Fee Mensal de Sustentação (Faturamento a cada 30 dias pós go-live)
+
+Escopo de Cobertura Financeira
+Entrega integral do código-fonte (Node.js/ TypeScript), configuração e teste de todas as plataformas parceiras (Stripe, Brevo, n8n, Manychat) e homologação em produção.
+Monitoramento de infraestrutura DevOps/SRE, prontidão de SLA para picos de tráfego (transmissões ao vivo), auditoria preventiva de logs de erros e aplicação de hotfixes de segurança.
+
+Investimento Sugerido
+R$ 6.000,00 a R$ 12.000,00 (Variação sob ativos visuais)
+R$ 800,00 a R$ 1.500,00 / mês
+
+Fast Development & Grupo Prisma Brasil - Confidencial
+
+Página 5 de 6
+
+Nota de Validação Financeira: Com base no plano de viabilidade do cliente, que projeta uma captação bruta inicial de R$ 4.000,00/mês no primeiro semestre, escalando para R$ 15.000,00/mês no fechamento do primeiro ano, o custo de Setup se deprecia nas semanas inaugurais da campanha, validando o altíssimo índice de Retorno Sobre o Investimento (ROI) da solução de engenharia proposta.
+
+Fast Development & Grupo Prisma Brasil - Confidencial
+
+Página 6 de 6
+
+
