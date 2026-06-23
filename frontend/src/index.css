@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+/* =============================================================================
+   DESIGN SYSTEM — Hospedando Anjos
+   Fonte da identidade: frontend/referencias/referencia-design-system.jpeg
+   (NÃO usar a paleta dark das img-1..4). Ver FRONT-END-CONTEXT.md §4.
+   ============================================================================= */
+@theme {
+  /* Cores da marca */
+  --color-cream: #f4ecda; /* fundo pergaminho quente */
+  --color-cream-deep: #ece0c6; /* variação para cards/realces sutis */
+  --color-navy: #16264a; /* azul-marinho — headlines e marca */
+  --color-navy-soft: #25406f; /* marinho mais claro p/ hovers */
+  --color-gold: #c2a14d; /* dourado/ocre — acentos e molduras */
+  --color-gold-soft: #d8c081;
+  --color-ink: #3a352e; /* cinza-quente escuro — corpo de texto */
+  --color-ink-soft: #6a6258;
+
+  /* Gradiente prisma — assinatura da marca (usar com parcimônia) */
+  --color-prism-red: #e2452b;
+  --color-prism-orange: #f08a24;
+  --color-prism-yellow: #f4c430;
+  --color-prism-green: #4ca64c;
+  --color-prism-blue: #2b6cb0;
+
+  /* Tipografia */
+  --font-display: 'Playfair Display', Georgia, serif; /* títulos grandes */
+  --font-caps: 'Cinzel', 'Playfair Display', serif; /* lockup da marca */
+  --font-script: 'Great Vibes', 'Playfair Display', cursive; /* palavras-acento */
+  --font-sans: 'Nunito Sans', system-ui, sans-serif; /* corpo e UI */
+
+  /* Sombras suaves e quentes (não cinzas neutras) */
+  --shadow-warm: 0 18px 40px -18px rgba(58, 45, 20, 0.35);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* respeita usuários que pedem menos animação */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Linha-assinatura do prisma: barrinha fina com o arco-íris da marca */
+  .prism-rule {
+    background-image: linear-gradient(
+      90deg,
+      var(--color-prism-red),
+      var(--color-prism-orange),
+      var(--color-prism-yellow),
+      var(--color-prism-green),
+      var(--color-prism-blue)
+    );
+  }
+  /* Texto com o degradê prisma (para detalhes pontuais) */
+  .prism-text {
+    background-image: linear-gradient(
+      90deg,
+      var(--color-prism-red),
+      var(--color-prism-orange),
+      var(--color-prism-yellow),
+      var(--color-prism-green),
+      var(--color-prism-blue)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
