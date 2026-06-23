@@ -119,6 +119,12 @@ export function BlocoDoacao() {
                   <span className="text-sm text-ink-soft">/mês</span>
                 )}
               </div>
+              {cents > 0 && !amountOk && (
+                <span className="mt-1.5 block text-sm font-semibold text-prism-red">
+                  Valor mínimo para doação {type}: {formatBRL(MIN_CENTS[type])}
+                  {type === 'recorrente' ? '/mês' : ''}.
+                </span>
+              )}
             </label>
 
             <Field
