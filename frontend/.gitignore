@@ -8,6 +8,9 @@ dist
 dist-ssr
 *.local
 
+# firebase deploy cache (mantem .firebaserc versionado)
+.firebase/
+
 # TypeScript incremental build cache
 *.tsbuildinfo
 
