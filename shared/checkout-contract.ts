@@ -29,3 +29,17 @@
 // export interface CheckoutResponse {
 //   checkoutUrl: string;     // URL hospedada da Stripe -> frontend faz redirect
 // }
+
+export type DonationType = 'avulsa' | 'recorrente';
+
+export interface CheckoutRequest {
+  type: DonationType;
+  amountInCents: number;   
+  name: string;
+  email: string;
+  whatsapp: string;        
+}
+
+export interface CheckoutResponse {
+  checkoutUrl: string;     
+}
