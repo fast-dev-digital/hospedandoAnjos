@@ -1,0 +1,21 @@
+# Dependências
+node_modules/
+
+# Segredos — NUNCA versionar (Coolify guarda as env vars em produção)
+.env
+.env.*
+!.env.example
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

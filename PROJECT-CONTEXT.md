@@ -58,7 +58,6 @@ a última doação. Por isso os campos se dividem em **dois grupos** (decisão B
 | `STATUS` (ativo / falha_pagamento / inativo) | reflete a **assinatura recorrente** |
 | `STRIPE_CUSTOMER_ID` (`cus_xxx`) | reencontrar doador em eventos futuros |
 | `DATA_PRIMEIRA_DOACAO` | recibo / relatório futuro |
-| `LINK_CANCELAMENTO` | link assinado p/ o Billing Portal; o e-mail só insere `{{LINK_CANCELAMENTO}}` (backend gera, ver abaixo) |
 
 **Grupo "última doação" — qualquer doação (recorrente ou avulsa) atualiza:**
 
@@ -85,29 +84,6 @@ Sempre presentes: `EMAIL`, `NOME`, `WHATSAPP` (E.164).
 (primeira ou repetida, recorrente ou avulsa) atualiza esse campo e dispara o
 agradecimento. A de-dupe de webhook duplicado fica por conta do n8n.
 
-**Recibo mensal (renovação recorrente):** a Stripe cobra a assinatura todo mês e
-emite `invoice.payment_succeeded`. O backend trata **só** as renovações
-(`billing_reason = subscription_cycle`) — a primeira fatura
-(`subscription_create`) é ignorada aqui porque já é coberta pelo
-`checkout.session.completed` (senão o recibo do mês 1 sairia duplicado). A
-renovação atualiza **só o grupo última doação** (`VALOR_ULTIMA`, `DATA_ULTIMA`,
-`TIPO_ULTIMA=recorrente`) → o gatilho `DATA_ULTIMA` dispara o e-mail mensal.
-
-**Link de cancelamento (Billing Portal):** o backend gera, no cadastro recorrente,
-um link assinado (HMAC, sem validade — vale enquanto a pessoa for doadora) e grava
-em `LINK_CANCELAMENTO` no Brevo. O e-mail só insere `{{LINK_CANCELAMENTO}}`. O link
-aponta para a API (`{API_BASE_URL}/billing-portal?t=<token>`); ao ser clicado, a
-API valida o token e **redireciona (302)** direto para o portal da Stripe. Segredo
-`BILLING_LINK_SECRET` (gerar com `openssl rand -hex 32`) e `API_BASE_URL` vivem no
-env, nunca no repo.
-
-**Checklist de configuração do Brevo (tela, não código):**
-1. Criar TODOS os atributos de contato listados acima (incluindo `LINK_CANCELAMENTO`).
-   Atributo que não existe na conta é **ignorado silenciosamente** no upsert.
-2. Automação nativa do Brevo com gatilho **`DATA_ULTIMA` mudou** → envia o e-mail
-   (recibo + `{{LINK_CANCELAMENTO}}`). Dispara na 1ª doação e nas renovações.
-3. n8n: WhatsApp/Manychat no mesmo gatilho (com de-dupe própria).
-
 ## Idempotência (backend stateless)
 
 O backend **não tem banco próprio**: fonte de verdade das doações = Stripe,
@@ -123,15 +99,6 @@ obtida por etapas naturalmente idempotentes:
   `DATA_ULTIMA` de novo e poderia re-disparar. Mitigação: **o n8n de-duplica
   antes de chamar o Manychat** (ex.: ignorar se já agradeceu por aquela
   doação/data). **Obrigatório validar isso na configuração das plataformas.**
-- **E-mail de recibo (Brevo nativo)**: ⚠️ mesmo risco do agradecimento. Decisão
-  de canais: **Brevo nativo dispara o e-mail** (recibo + `{{LINK_CANCELAMENTO}}`),
-  **n8n dispara o WhatsApp** (Manychat). A de-dupe do WhatsApp fica no n8n; a do
-  e-mail **não** é controlada pelo backend (stateless). **Postura adotada**: para
-  recibo (e-mail informativo, não cobrança), aceitar uma duplicação **rara** —
-  webhooks duplicados da Stripe são incomuns e o custo de um recibo repetido é
-  baixo. Resolver "direito" exigiria estado no backend (reabre ADR stateless),
-  desproporcional. Reavaliar (mover o e-mail para o n8n) só se a duplicação
-  incomodar na prática.
 
 ## Futuros planejados (fora do escopo agora, mas a estrutura já os acomoda)
 
@@ -157,32 +124,6 @@ n8n/Manychat ou fundir o backend ao Brevo).
 > Por causa de (3) e (4), a decisão foi montar **Brevo + n8n + Manychat completo
 > desde o início**, em vez do caminho "só Brevo" (que é mais simples hoje, mas
 > atende mal retenção e lembrete agendado).
-
-## Pré-requisitos para testar o projeto de ponta a ponta (bloqueio atual)
-
-O backend está implementado e testado (unit/integração com mocks), mas **não
-conversa com o mundo real** até estes acessos serem obtidos e configurados:
-
-- **Credenciais (env, nunca no repo)** — pegar e colocar no `.env`/Coolify:
-  - Stripe: `STRIPE_SECRET_KEY` (`sk_test_…`), `STRIPE_WEBHOOK_SECRET` (`whsec_…`,
-    via Stripe CLI no dev), publishable `pk_…` (frontend). Confirmar **PIX
-    habilitado** na conta BR.
-  - Brevo: `BREVO_API_KEY`.
-  - Backend define: `BILLING_LINK_SECRET` (gerar com `openssl rand -hex 32`),
-    `API_BASE_URL`, `FRONTEND_ORIGIN`, `PORT`.
-- **Configurar Brevo** — criar TODOS os atributos de contato (incl.
-  `LINK_CANCELAMENTO`); montar a automação de e-mail (gatilho `DATA_ULTIMA`,
-  recibo + `{{LINK_CANCELAMENTO}}`). Ver "Checklist de configuração do Brevo".
-- **Configurar Stripe** — apontar o webhook para `…/webhooks/stripe`; no dev,
-  `stripe listen --forward-to localhost:3000/webhooks/stripe` gera o `whsec_`.
-- **Workflow no n8n** — escutar o Brevo (gatilho de contato) e disparar o
-  Manychat (WhatsApp), com de-dupe própria. Acesso às contas n8n/Manychat.
-- **Frontend** — o time de frontend precisa commitar o form/landing (hoje
-  ausente no repo) que chama `POST /checkout` e abre o link da Stripe.
-
-> Ordem prática: credenciais no `.env` → Stripe CLI p/ `whsec_` → atributos +
-> automação no Brevo → testar checkout avulso → recorrente → cancelamento →
-> renovação. n8n/Manychat por último (não bloqueiam o backend).
 
 ## Pendências (a decidir)
 
@@ -285,12 +226,9 @@ hospedado, **nenhuma verificação de domínio da Apple é necessária**.
    `recurring: { interval: 'month' }` e um `product_data.name` genérico
    ("Doação Hospedando Anjos"); a Stripe cria os Prices sob demanda.
 2. Webhooks — receber e validar (assinatura `stripe-signature` + raw body) e
-   tratar **4 eventos**; qualquer outro responde `200` e é ignorado:
+   tratar **3 eventos**; qualquer outro responde `200` e é ignorado:
    - `checkout.session.completed` → cadastra/atualiza o doador no Brevo (upsert
      por e-mail) com os dados da doação.
-   - `invoice.payment_succeeded` (só `billing_reason=subscription_cycle`) →
-     atualiza o grupo última doação (recibo mensal da renovação). A primeira
-     fatura é ignorada (já coberta pelo `checkout.session.completed`).
    - `customer.subscription.deleted` → marca o doador como "Inativo" no Brevo.
    - `invoice.payment_failed` → marca status de falha/recuperação no Brevo. A
      régua de recuperação (e-mail/WhatsApp) fica no n8n, não no backend.
