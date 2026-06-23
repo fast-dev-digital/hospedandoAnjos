@@ -70,6 +70,29 @@ describe('app (integração HTTP)', () => {
       expect(res.status).toBe(400);
       expect(mockedCreate).not.toHaveBeenCalled();
     });
+
+    it('recorrente válido (≥2000) → 200 e repassa type=recorrente à Stripe', async () => {
+      mockedCreate.mockResolvedValue('https://checkout.stripe.com/c/pay/sub');
+
+      const res = await request(app)
+        .post('/checkout')
+        .send({ ...bodyValido, type: 'recorrente', amountInCents: 2000 });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ checkoutUrl: 'https://checkout.stripe.com/c/pay/sub' });
+      expect(mockedCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'recorrente', amountInCents: 2000 }),
+      );
+    });
+
+    it('recorrente abaixo do mínimo (1999) → 400 e NÃO chama a Stripe', async () => {
+      const res = await request(app)
+        .post('/checkout')
+        .send({ ...bodyValido, type: 'recorrente', amountInCents: 1999 });
+
+      expect(res.status).toBe(400);
+      expect(mockedCreate).not.toHaveBeenCalled();
+    });
   });
 
   describe('POST /webhooks/stripe', () => {
