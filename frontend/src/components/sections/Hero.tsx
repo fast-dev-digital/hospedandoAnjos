@@ -42,11 +42,10 @@ export function Hero() {
         </div>
 
         <p className="mx-auto mt-8 max-w-xl text-lg leading-relaxed text-ink sm:text-xl">
-          Ao doar, você faz parte do ministério{' '}
-          <strong className="font-bold text-navy">
-            hospedando anjos do Prisma
-          </strong>
-          , anunciando esperança pela{' '}
+          Ao doar, você ajuda o{' '}
+          <strong className="font-bold text-navy">Prisma Brasil</strong> a{' '}
+          <strong className="font-bold text-navy">hospedar anjos</strong>: vidas
+          alcançadas para Cristo pela{' '}
           <strong className="font-bold text-navy">música</strong> e o{' '}
           <strong className="font-bold text-navy">amor de Deus</strong>.
         </p>
@@ -57,7 +56,7 @@ export function Hero() {
             className="group inline-flex items-center gap-2 rounded-full bg-navy px-8 py-4 text-base font-bold text-cream shadow-warm transition-transform hover:-translate-y-0.5 hover:bg-navy-soft"
           >
             <Halo className="w-6 text-gold-soft transition-transform group-hover:-translate-y-0.5" />
-            Quero ser um anjo
+            Quero hospedar anjos
           </a>
           <a
             href="#programa"

@@ -30,7 +30,7 @@ export function Header() {
           href="#doar"
           className="rounded-full bg-navy px-5 py-2.5 text-sm font-bold text-cream shadow-warm transition-transform hover:-translate-y-0.5 hover:bg-navy-soft"
         >
-          Quero ser um anjo
+          Quero hospedar anjos
         </a>
       </div>
     </header>

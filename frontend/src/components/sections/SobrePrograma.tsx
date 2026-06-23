@@ -25,13 +25,32 @@ export function SobrePrograma() {
       <div className="mx-auto max-w-4xl text-center">
         <MusicNote className="mx-auto mb-4 w-7 text-gold" />
         <h2 className="font-display text-3xl font-bold text-navy sm:text-4xl">
-          O que é o <span className="font-script text-4xl sm:text-5xl">Hospedando anjos</span>
+          O que é o <span className="font-script text-4xl sm:text-5xl">Hospedando Anjos</span>?
         </h2>
-        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-ink">
-          É o programa de doação do Prisma Brasil que transforma apoio pontual em
-          sustento contínuo do ministério. Ser um anjo é hospedar, com a sua
-          contribuição, a obra que anuncia esperança pela música.
-        </p>
+        <div className="mx-auto mt-5 max-w-2xl space-y-4 text-lg leading-relaxed text-ink">
+          <p>
+            Hospedando Anjos é o programa de doação do{' '}
+            <strong className="font-bold text-navy">Prisma Brasil</strong>, criado
+            para transformar contribuições em apoio contínuo à missão do
+            ministério.
+          </p>
+          <p>
+            Por meio desse projeto, cada doação coopera com a proclamação do
+            evangelho realizada pelo Prisma, ajudando o grupo a anunciar esperança
+            pela música e a alcançar pessoas para Cristo. Essas vidas alcançadas —
+            tocadas pela mensagem, despertadas para a fé e conduzidas no caminho da
+            salvação — são os{' '}
+            <strong className="font-bold text-navy">
+              anjos que o doador ajuda a hospedar
+            </strong>
+            .
+          </p>
+          <p>
+            Assim, ao apoiar o Prisma, o doador não apenas mantém um ministério,
+            mas participa ativamente da missão de acolher e conduzir vidas rumo ao
+            Céu.
+          </p>
+        </div>
       </div>
 
       <div className="mx-auto mt-12 grid max-w-5xl gap-6 sm:grid-cols-3">
