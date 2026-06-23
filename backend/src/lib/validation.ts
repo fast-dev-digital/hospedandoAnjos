@@ -16,7 +16,7 @@
 //     - normalizeE164(whatsapp)               propaga erro; usa value normalizado
 //     - retorna value já SANITIZADO (whatsapp em E.164, strings trimadas)
 // =============================================================================
-import {validateAmount } from './money.js';
+import {validateAmount, reaisToCents } from './money.js';
 import {normalizeE164} from './phone.js';
 import type { CheckoutRequest } from '../../../shared/checkout-contract.js';
 import type { MultiResult} from './result.js';
@@ -40,17 +40,20 @@ export function validateCheckout(body: unknown): MultiResult<CheckoutRequest> {
   const type = b.type;
   const name = str(b.name);
   const email = str(b.email);
-  const amountInCents = b.amountInCents;
+  const rawAmount = b.amountInCents;
 
   const typeOk = type === 'avulsa' || type === 'recorrente';
   if (!typeOk) errors.push('Tipo de doação inválido');
   if (name.length === 0) errors.push('Nome é obrigatório');
   if (!EMAIL_RE.test(email)) errors.push('E-mail inválido');
 
-  // valor: precisa ser number; o mínimo só se aplica se o type for válido
-  if (typeof amountInCents !== 'number') {
+  // o front envia o valor em REAIS; convertemos para centavos (reaisToCents)
+  // antes de validar o mínimo e seguir para a Stripe.
+  let amountInCents = 0;
+  if (typeof rawAmount !== 'number' || !Number.isFinite(rawAmount)) {
     errors.push('Valor inválido');
   } else if (typeOk) {
+    amountInCents = reaisToCents(rawAmount);
     const r = validateAmount(type, amountInCents);
     if (!r.ok) errors.push(r.error);
   }
@@ -69,12 +72,13 @@ export function validateCheckout(body: unknown): MultiResult<CheckoutRequest> {
     return { ok: false, errors };
   }
 
-  // tudo válido -> devolve payload SANITIZADO (whatsapp em E.164, strings trimadas)
+  // tudo válido -> devolve payload SANITIZADO (valor em centavos, whatsapp em
+  // E.164, strings trimadas)
   return {
     ok: true,
     value: {
       type: type as CheckoutRequest['type'],
-      amountInCents: amountInCents as number,
+      amountInCents,
       name,
       email,
       whatsapp: whatsappE164,

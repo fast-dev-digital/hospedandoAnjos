@@ -22,9 +22,10 @@ const mockedConstruct = vi.mocked(constructWebhookEvent);
 const mockedHandle = vi.mocked(handleStripeEvent);
 const app = createApp();
 
+// amountInCents no payload do front vem em REAIS; o backend converte.
 const bodyValido = {
   type: 'avulsa',
-  amountInCents: 5000,
+  amountInCents: 50, // R$50,00
   name: 'Maria Silva',
   email: 'maria@exemplo.com',
   whatsapp: '+5511999998888',
@@ -57,7 +58,7 @@ describe('app (integração HTTP)', () => {
     it('payload inválido → 400 e NÃO chama a Stripe', async () => {
       const res = await request(app)
         .post('/checkout')
-        .send({ ...bodyValido, amountInCents: 50 }); // abaixo do mínimo avulsa
+        .send({ ...bodyValido, amountInCents: 0.5 }); // R$0,50 abaixo do mínimo avulsa (R$1)
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('error');
@@ -71,12 +72,12 @@ describe('app (integração HTTP)', () => {
       expect(mockedCreate).not.toHaveBeenCalled();
     });
 
-    it('recorrente válido (≥2000) → 200 e repassa type=recorrente à Stripe', async () => {
+    it('recorrente válido (R$20) → 200 e repassa type=recorrente à Stripe (em centavos)', async () => {
       mockedCreate.mockResolvedValue('https://checkout.stripe.com/c/pay/sub');
 
       const res = await request(app)
         .post('/checkout')
-        .send({ ...bodyValido, type: 'recorrente', amountInCents: 2000 });
+        .send({ ...bodyValido, type: 'recorrente', amountInCents: 20 });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ checkoutUrl: 'https://checkout.stripe.com/c/pay/sub' });
@@ -85,10 +86,10 @@ describe('app (integração HTTP)', () => {
       );
     });
 
-    it('recorrente abaixo do mínimo (1999) → 400 e NÃO chama a Stripe', async () => {
+    it('recorrente abaixo do mínimo (R$19,99) → 400 e NÃO chama a Stripe', async () => {
       const res = await request(app)
         .post('/checkout')
-        .send({ ...bodyValido, type: 'recorrente', amountInCents: 1999 });
+        .send({ ...bodyValido, type: 'recorrente', amountInCents: 19.99 });
 
       expect(res.status).toBe(400);
       expect(mockedCreate).not.toHaveBeenCalled();

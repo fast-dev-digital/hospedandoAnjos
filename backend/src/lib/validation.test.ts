@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { validateCheckout } from './validation.js';
 
+// front envia o valor em REAIS no campo amountInCents; o backend converte p/ centavos.
 const valido = {
   type: 'avulsa',
-  amountInCents: 5000,
+  amountInCents: 50, // R$50,00
   name: 'Maria Silva',
   email: 'maria@exemplo.com',
   whatsapp: '+5511999998888',
@@ -11,9 +12,15 @@ const valido = {
 
 describe('validateCheckout', () => {
   describe('payload válido', () => {
-    it('aceita e devolve value sanitizado', () => {
+    it('aceita e devolve value sanitizado com o valor convertido para centavos', () => {
       const r = validateCheckout(valido);
-      expect(r).toEqual({ ok: true, value: valido });
+      expect(r).toEqual({ ok: true, value: { ...valido, amountInCents: 5000 } });
+    });
+
+    it('converte reais com centavos sem erro de float (20.5 -> 2050)', () => {
+      const r = validateCheckout({ ...valido, amountInCents: 20.5 });
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.value.amountInCents).toBe(2050);
     });
 
     it('trima nome e email e normaliza o whatsapp', () => {
@@ -31,8 +38,8 @@ describe('validateCheckout', () => {
       }
     });
 
-    it('aceita recorrente com valor >= 2000', () => {
-      expect(validateCheckout({ ...valido, type: 'recorrente', amountInCents: 2000 }).ok).toBe(true);
+    it('aceita recorrente com valor >= R$20', () => {
+      expect(validateCheckout({ ...valido, type: 'recorrente', amountInCents: 20 }).ok).toBe(true);
     });
   });
 
@@ -57,13 +64,13 @@ describe('validateCheckout', () => {
       expect(r.ok).toBe(false);
     });
 
-    it('rejeita valor abaixo do mínimo avulsa', () => {
-      const r = validateCheckout({ ...valido, amountInCents: 50 });
+    it('rejeita valor abaixo do mínimo avulsa (R$0,50)', () => {
+      const r = validateCheckout({ ...valido, amountInCents: 0.5 });
       expect(r.ok).toBe(false);
     });
 
-    it('rejeita recorrente abaixo de 2000', () => {
-      const r = validateCheckout({ ...valido, type: 'recorrente', amountInCents: 1500 });
+    it('rejeita recorrente abaixo de R$20', () => {
+      const r = validateCheckout({ ...valido, type: 'recorrente', amountInCents: 15 });
       expect(r.ok).toBe(false);
     });
 
