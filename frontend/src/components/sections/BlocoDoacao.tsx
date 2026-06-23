@@ -81,7 +81,7 @@ export function BlocoDoacao() {
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             {/* Âncoras de valor */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {ANCHORS_CENTS.map((value) => {
                 const active = cents === value;
                 return (

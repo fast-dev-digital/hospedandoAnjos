@@ -9,7 +9,9 @@ export const MIN_CENTS: Record<DonationType, number> = {
 
 // Âncoras de valor sugeridas (em centavos). Clicar preenche o campo; o doador
 // pode sobrescrever — âncora e valor livre são o MESMO campo.
-export const ANCHORS_CENTS: number[] = [2000, 5000, 10000, 20000];
+export const ANCHORS_CENTS: number[] = [
+  2000, 5000, 10000, 20000, 100000, 250000,
+];
 
 /** Formata centavos como BRL (ex.: 2000 -> "R$ 20,00"). */
 export function formatBRL(cents: number): string {
