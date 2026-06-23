@@ -6,11 +6,13 @@ import * as donor from './donor.service.js';
 // Mocka o donor.service: aqui testamos o ROTEAMENTO/extração de campos, não o Brevo.
 vi.mock('./donor.service.js', () => ({
   registerDonation: vi.fn(),
+  registerRecurringRenewal: vi.fn(),
   markPaymentFailed: vi.fn(),
   markSubscriptionInactive: vi.fn(),
 }));
 
 const mockRegister = vi.mocked(donor.registerDonation);
+const mockRenewal = vi.mocked(donor.registerRecurringRenewal);
 const mockFailed = vi.mocked(donor.markPaymentFailed);
 const mockInactive = vi.mocked(donor.markSubscriptionInactive);
 
@@ -66,6 +68,30 @@ describe('handleStripeEvent', () => {
         evt('customer.subscription.deleted', { customer: { email: 'x@y.com' } }),
       );
       expect(mockInactive).toHaveBeenCalledWith('x@y.com');
+    });
+  });
+
+  describe('invoice.payment_succeeded (recibo mensal)', () => {
+    it('renovação (subscription_cycle) -> registerRecurringRenewal com email e valor', async () => {
+      await handleStripeEvent(
+        evt('invoice.payment_succeeded', {
+          billing_reason: 'subscription_cycle',
+          customer_email: 'maria@exemplo.com',
+          amount_paid: 2000,
+        }),
+      );
+      expect(mockRenewal).toHaveBeenCalledWith('maria@exemplo.com', 2000);
+    });
+
+    it('primeira fatura (subscription_create) é IGNORADA -> não duplica o recibo do mês 1', async () => {
+      await handleStripeEvent(
+        evt('invoice.payment_succeeded', {
+          billing_reason: 'subscription_create',
+          customer_email: 'maria@exemplo.com',
+          amount_paid: 2000,
+        }),
+      );
+      expect(mockRenewal).not.toHaveBeenCalled();
     });
   });
 

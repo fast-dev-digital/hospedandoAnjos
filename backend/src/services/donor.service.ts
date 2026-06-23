@@ -10,7 +10,15 @@
 // =============================================================================
 
 import { upsertContact, getContact } from '../integrations/brevo.js';
+import { signCustomerToken } from '../lib/billing-token.js';
+import { env } from '../config/env.js';
 import type { DonationType } from '../../../shared/checkout-contract.js';
+
+// monta o link de cancelamento (forma B): aponta p/ a API com o token assinado.
+// O Brevo só insere este campo no e-mail; quem o gera com segurança é o backend.
+function linkCancelamento(customerId: string): string {
+  return `${env.API_BASE_URL}/billing-portal?t=${signCustomerToken(customerId)}`;
+}
 
 export interface Donation {
   email: string;
@@ -26,7 +34,7 @@ export async function registerDonation(d: Donation): Promise<void> {
   const base = { EMAIL: d.email, NOME: d.name, WHATSAPP: d.whatsapp };
   const ultima = {
     VALOR_ULTIMA: d.valorCents,
-    DATA_ULTIMA: d.date, // gatilho do n8n
+    DATA_ULTIMA: d.date, // gatilho do n8n que faz mandar agradicimento ao manychat
     TIPO_ULTIMA: d.type,
   };
 
@@ -36,7 +44,14 @@ export async function registerDonation(d: Donation): Promise<void> {
       TIPO: 'recorrente',
       STATUS: 'ativo',
       VALOR: d.valorCents,
-      ...(d.customerId ? { STRIPE_CUSTOMER_ID: d.customerId } : {}),
+      // customerId + link de cancelamento só existem se a Stripe criou o Customer
+      // (sempre verdade na recorrente/subscription).
+      ...(d.customerId
+        ? {
+            STRIPE_CUSTOMER_ID: d.customerId,
+            LINK_CANCELAMENTO: linkCancelamento(d.customerId),
+          }
+        : {}),
       DATA_PRIMEIRA_DOACAO: (existing?.DATA_PRIMEIRA_DOACAO as string) ?? d.date,
     };
     await upsertContact(d.email, { ...base, ...mantenedora, ...ultima });
@@ -46,6 +61,17 @@ export async function registerDonation(d: Donation): Promise<void> {
   // avulsa: NÃO envia campos da mantenedora (TIPO/STATUS/VALOR) -> não rebaixa
   // quem já é recorrente. Contato novo é criado com TIPO=avulsa (default da conta).
   await upsertContact(d.email, { ...base, ...ultima });
+}
+
+// renovação mensal (invoice.payment_succeeded de subscription_cycle): atualiza
+// SÓ o grupo última doação. Muda DATA_ULTIMA -> dispara o e-mail mensal de recibo
+// (via automação do Brevo/n8n). Não toca a mantenedora (não rebaixa, não regrava).
+export async function registerRecurringRenewal(email: string, valorCents: number): Promise<void> {
+  await upsertContact(email, {
+    VALOR_ULTIMA: valorCents,
+    DATA_ULTIMA: new Date().toISOString(),
+    TIPO_ULTIMA: 'recorrente',
+  });
 }
 
 // transições de STATUS (grupo mantenedora) — usadas na slice de status (#4).

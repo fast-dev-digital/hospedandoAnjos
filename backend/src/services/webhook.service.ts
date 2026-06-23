@@ -35,6 +35,20 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
       return;
     }
 
+    case 'invoice.payment_succeeded': {
+      const inv = event.data.object as {
+        billing_reason?: string | null;
+        amount_paid?: number | null;
+      };
+      // só renovações (subscription_cycle) viram recibo mensal. A primeira fatura
+      // (subscription_create) já é coberta pelo checkout.session.completed — tratá-la
+      // aqui duplicaria o e-mail do mês 1.
+      if (inv.billing_reason !== 'subscription_cycle') return;
+      const email = emailFromEvent(event.data.object);
+      if (email) await donor.registerRecurringRenewal(email, inv.amount_paid ?? 0);
+      return;
+    }
+
     case 'invoice.payment_failed': {
       const email = emailFromEvent(event.data.object);
       if (email) await donor.markPaymentFailed(email);
