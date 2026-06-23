@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import type { DonationType } from '@shared/checkout-contract';
 import { createCheckout } from '@/lib/checkout';
 import {
@@ -16,13 +19,15 @@ export function BlocoDoacao() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [whatsappTyped, setWhatsappTyped] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const cents = useMemo(() => parseToCents(amountText), [amountText]);
   const amountOk = isValidAmount(type, cents);
+  const whatsappValid = whatsapp.trim() !== '' && isValidPhoneNumber(whatsapp);
   const formValid =
-    amountOk && name.trim() !== '' && email.trim() !== '' && whatsapp.trim() !== '';
+    amountOk && name.trim() !== '' && email.trim() !== '' && whatsappValid;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -140,13 +145,28 @@ export function BlocoDoacao() {
               onChange={setEmail}
               autoComplete="email"
             />
-            <Field
-              label="WhatsApp (com código do país)"
-              value={whatsapp}
-              onChange={setWhatsapp}
-              placeholder="+55 11 99999-9999"
-              autoComplete="tel"
-            />
+            <label className="block">
+              <span className="mb-1 block text-sm font-semibold text-ink">
+                WhatsApp (com código do país)
+              </span>
+              <PhoneInput
+                defaultCountry="br"
+                value={whatsapp}
+                onChange={(phone, meta) => {
+                  setWhatsapp(phone);
+                  const nationalDigits =
+                    phone.replace(/\D/g, '').length - meta.country.dialCode.length;
+                  setWhatsappTyped(nationalDigits > 0);
+                }}
+                className="phone-doacao"
+                inputProps={{ autoComplete: 'tel', 'aria-label': 'WhatsApp com código do país' }}
+              />
+              {whatsappTyped && !whatsappValid && (
+                <span className="mt-1.5 block text-sm font-semibold text-prism-red">
+                  Número de WhatsApp inválido para o país selecionado.
+                </span>
+              )}
+            </label>
 
             {error && (
               <p className="rounded-lg bg-prism-red/10 px-3 py-2 text-sm font-semibold text-prism-red">

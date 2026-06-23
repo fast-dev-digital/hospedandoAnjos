@@ -86,3 +86,40 @@
     color: transparent;
   }
 }
+
+/* =============================================================================
+   Campo de telefone internacional (react-international-phone)
+   Override fora de @layer para vencer o style.css da lib por especificidade.
+   Objetivo: idêntico aos inputs `rounded-xl border-gold/40 bg-cream focus:border-navy`.
+   ============================================================================= */
+.phone-doacao {
+  width: 100%;
+  --react-international-phone-height: 3rem;
+  --react-international-phone-font-size: 1rem;
+  --react-international-phone-border-radius: 0.75rem;
+  --react-international-phone-border-color: rgba(194, 161, 77, 0.4); /* gold/40 */
+  --react-international-phone-background-color: var(--color-cream);
+  --react-international-phone-text-color: var(--color-navy);
+  --react-international-phone-country-selector-background-color: var(--color-cream);
+  --react-international-phone-country-selector-background-color-hover: var(
+    --color-cream-deep
+  );
+  --react-international-phone-dropdown-item-background-color: var(--color-cream);
+  --react-international-phone-dropdown-item-background-color-hover: var(
+    --color-cream-deep
+  );
+  --react-international-phone-dropdown-item-text-color: var(--color-navy);
+  --react-international-phone-selected-dropdown-item-background-color: var(
+    --color-cream-deep
+  );
+}
+
+.phone-doacao .react-international-phone-input {
+  width: 100%;
+}
+
+/* foco: borda marinho como nos demais campos */
+.phone-doacao:focus-within .react-international-phone-country-selector-button,
+.phone-doacao:focus-within .react-international-phone-input {
+  border-color: var(--color-navy);
+}
