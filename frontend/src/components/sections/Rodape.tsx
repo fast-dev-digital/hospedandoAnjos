@@ -1,4 +1,4 @@
-import { BrandLockup } from '@/components/brand/BrandLockup';
+import logoPrisma from '@/assets/logo-prisma.webp';
 
 export function Rodape() {
   return (
@@ -8,7 +8,13 @@ export function Rodape() {
 
       <div className="mx-auto grid max-w-5xl gap-8 px-5 py-12 sm:grid-cols-3">
         <div>
-          <BrandLockup className="text-cream" />
+          <span className="inline-flex rounded-xl bg-cream px-4 py-3 shadow-warm">
+            <img
+              src={logoPrisma}
+              alt="Associação Prisma Brasil"
+              className="h-10 w-auto"
+            />
+          </span>
           <p className="mt-4 max-w-xs text-sm text-cream/70">
             Anunciando esperança pela música e o amor de Deus. Hortolândia/SP.
           </p>

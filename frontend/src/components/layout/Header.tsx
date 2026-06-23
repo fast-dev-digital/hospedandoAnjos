@@ -1,4 +1,4 @@
-import { BrandLockup } from '@/components/brand/BrandLockup';
+import logoPrisma from '@/assets/logo-prisma.webp';
 
 const NAV = [
   { href: '#programa', label: 'O programa' },
@@ -10,8 +10,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-gold/20 bg-cream/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <a href="#topo" className="flex items-center gap-2" aria-label="Início">
-          <BrandLockup className="text-navy" />
+        <a href="#topo" className="flex items-center" aria-label="Início">
+          <img
+            src={logoPrisma}
+            alt="Associação Prisma Brasil"
+            className="h-10 w-auto sm:h-11"
+          />
         </a>
 
         <nav className="hidden items-center gap-8 md:flex">

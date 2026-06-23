@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { BrandLockup } from '@/components/brand/BrandLockup';
 import { AngelWings, Halo, Heart, MusicNote } from '@/components/brand/Decor';
+import logoPrisma from '@/assets/logo-prisma.webp';
 
 // Rota dedicada de pós-pagamento (destino da success_url da Stripe).
 // SEM efeito colateral: o cadastro no Brevo/Stripe acontece via webhook no backend.
@@ -12,8 +12,12 @@ export function ObrigadoPage() {
           não existiriam nesta rota. */}
       <header className="border-b border-gold/20 bg-cream/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center px-5">
-          <Link to="/" className="flex items-center gap-2" aria-label="Início">
-            <BrandLockup className="text-navy" />
+          <Link to="/" className="flex items-center" aria-label="Início">
+            <img
+              src={logoPrisma}
+              alt="Associação Prisma Brasil"
+              className="h-10 w-auto sm:h-11"
+            />
           </Link>
         </div>
       </header>
