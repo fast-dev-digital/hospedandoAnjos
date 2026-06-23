@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app.js';
-import { createCheckoutSession, constructWebhookEvent } from './integrations/stripe.js';
+import {
+  createCheckoutSession,
+  constructWebhookEvent,
+  createBillingPortalSession,
+} from './integrations/stripe.js';
 import { handleStripeEvent } from './services/webhook.service.js';
+import { signCustomerToken } from './lib/billing-token.js';
 
 // Mocka o adapter da Stripe: o teste sobe a app HTTP de verdade, mas NÃO toca
 // o SDK real nem precisa de chave. Testa a cadeia req -> rota -> controller ->
@@ -10,6 +15,7 @@ import { handleStripeEvent } from './services/webhook.service.js';
 vi.mock('./integrations/stripe.js', () => ({
   createCheckoutSession: vi.fn(),
   constructWebhookEvent: vi.fn(),
+  createBillingPortalSession: vi.fn(),
 }));
 
 // Mocka o webhook.service: aqui só verificamos a borda HTTP (raw body, status).
@@ -20,6 +26,7 @@ vi.mock('./services/webhook.service.js', () => ({
 const mockedCreate = vi.mocked(createCheckoutSession);
 const mockedConstruct = vi.mocked(constructWebhookEvent);
 const mockedHandle = vi.mocked(handleStripeEvent);
+const mockedPortal = vi.mocked(createBillingPortalSession);
 const app = createApp();
 
 // amountInCents no payload do front vem em REAIS; o backend converte.
@@ -162,6 +169,33 @@ describe('app (integração HTTP)', () => {
         .send(Buffer.from('{}'));
 
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe('GET /billing-portal', () => {
+    it('token válido → 302 redirecionando p/ o portal da Stripe', async () => {
+      mockedPortal.mockResolvedValue('https://billing.stripe.com/p/session/xyz');
+      const token = signCustomerToken('cus_123');
+
+      const res = await request(app).get(`/billing-portal?t=${token}`);
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe('https://billing.stripe.com/p/session/xyz');
+      expect(mockedPortal).toHaveBeenCalledWith('cus_123');
+    });
+
+    it('token inválido → 400 e NÃO abre portal', async () => {
+      const res = await request(app).get('/billing-portal?t=lixo');
+
+      expect(res.status).toBe(400);
+      expect(mockedPortal).not.toHaveBeenCalled();
+    });
+
+    it('sem token → 400', async () => {
+      const res = await request(app).get('/billing-portal');
+
+      expect(res.status).toBe(400);
+      expect(mockedPortal).not.toHaveBeenCalled();
     });
   });
 });

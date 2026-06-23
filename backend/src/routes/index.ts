@@ -18,10 +18,13 @@
 // =============================================================================
 import { Router } from 'express';
 import { postCheckout } from '../controllers/checkout.controller.js';
+import { getBillingPortal } from '../controllers/billing.controller.js';
 
 const rotas = Router();
 rotas.get('/health', (_req, res) => res.json({ok:true}));
 rotas.post('/checkout', postCheckout);
-//rotas para biiling do portal e webhook do stripe
+// link de cancelamento (clicado no e-mail) -> redireciona p/ o portal da Stripe.
+rotas.get('/billing-portal', getBillingPortal);
+// NOTA: /webhooks/stripe é montado no app.ts ANTES do express.json() (raw body).
 
 export default rotas;
