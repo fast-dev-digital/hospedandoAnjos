@@ -7,8 +7,9 @@
 // chamado, então os valores não precisam ser válidos.
 // =============================================================================
 
-process.env.STRIPE_SECRET_KEY ??= 'sk_test_fake';
-process.env.STRIPE_WEBHOOK_SECRET ??= 'whsec_fake';
+process.env.ASAAS_API_KEY ??= 'asaas_fake';
+process.env.ASAAS_WEBHOOK_TOKEN ??= 'webhook_token_fake';
+process.env.ASAAS_BASE_URL ??= 'https://api-sandbox.asaas.com/v3';
 process.env.BREVO_API_KEY ??= 'brevo_fake';
 process.env.FRONTEND_ORIGIN ??= 'http://localhost:5173';
 process.env.BILLING_LINK_SECRET ??= 'test-secret';

@@ -15,8 +15,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "libphonenumber-js": "^1.13.7",
-    "stripe": "^22.2.2"
+    "libphonenumber-js": "^1.13.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

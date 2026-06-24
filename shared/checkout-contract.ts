@@ -22,6 +22,8 @@ export interface CheckoutRequest {
   email: string;
   /** E.164 com código de país; o backend normaliza/rejeita. */
   whatsapp: string;
+  /** CPF do doador (exigido pelo Asaas p/ criar o cliente). Só dígitos ou formatado. */
+  cpf: string;
 }
 
 /** Resposta do BACKEND: URL hospedada da Stripe para o frontend redirecionar. */

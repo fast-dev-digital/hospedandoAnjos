@@ -2,200 +2,103 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app.js';
 import {
-  createCheckoutSession,
-  constructWebhookEvent,
-  createBillingPortalSession,
-} from './integrations/stripe.js';
-import { handleStripeEvent } from './services/webhook.service.js';
-import { signCustomerToken } from './lib/billing-token.js';
+  findOrCreateCustomer,
+  createPayment,
+  createSubscription,
+} from './integrations/asaas.js';
 
-// Mocka o adapter da Stripe: o teste sobe a app HTTP de verdade, mas NÃO toca
-// o SDK real nem precisa de chave. Testa a cadeia req -> rota -> controller ->
-// service -> (stripe mockada) -> resposta, e o errorHandler.
-vi.mock('./integrations/stripe.js', () => ({
-  createCheckoutSession: vi.fn(),
-  constructWebhookEvent: vi.fn(),
-  createBillingPortalSession: vi.fn(),
+// Mocka o adapter do Asaas: sobe a app HTTP de verdade, mas NÃO toca a rede.
+// Testa a cadeia req -> rota -> controller -> service -> (asaas mockado) -> resposta.
+vi.mock('./integrations/asaas.js', () => ({
+  findOrCreateCustomer: vi.fn(),
+  createPayment: vi.fn(),
+  createSubscription: vi.fn(),
 }));
 
-// Mocka o webhook.service: aqui só verificamos a borda HTTP (raw body, status).
-vi.mock('./services/webhook.service.js', () => ({
-  handleStripeEvent: vi.fn(),
-}));
-
-const mockedCreate = vi.mocked(createCheckoutSession);
-const mockedConstruct = vi.mocked(constructWebhookEvent);
-const mockedHandle = vi.mocked(handleStripeEvent);
-const mockedPortal = vi.mocked(createBillingPortalSession);
+const mockCustomer = vi.mocked(findOrCreateCustomer);
+const mockPayment = vi.mocked(createPayment);
+const mockSubscription = vi.mocked(createSubscription);
 const app = createApp();
 
-// o front já envia em centavos (parseToCents); o backend só revalida o mínimo.
 const bodyValido = {
   type: 'avulsa',
-  amountInCents: 5000, // R$50,00
+  amountInCents: 5000, // R$50,00 (centavos)
   name: 'Maria Silva',
   email: 'maria@exemplo.com',
   whatsapp: '+5511999998888',
+  cpf: '529.982.247-25',
 };
 
 describe('app (integração HTTP)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCustomer.mockResolvedValue('cus_123');
   });
 
   describe('GET /health', () => {
-    it('responde 200 { ok: true } — a app subiu', async () => {
+    it('responde 200 { ok: true }', async () => {
       const res = await request(app).get('/health');
-
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
     });
   });
 
   describe('POST /checkout', () => {
-    it('payload válido → 200 com a checkoutUrl (Stripe mockada)', async () => {
-      mockedCreate.mockResolvedValue('https://checkout.stripe.com/c/pay/abc123');
+    it('avulsa válida → 200 com a invoiceUrl (Asaas mockado)', async () => {
+      mockPayment.mockResolvedValue('https://asaas.com/i/abc');
 
       const res = await request(app).post('/checkout').send(bodyValido);
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ checkoutUrl: 'https://checkout.stripe.com/c/pay/abc123' });
+      expect(res.body).toEqual({ checkoutUrl: 'https://asaas.com/i/abc' });
     });
 
-    it('payload inválido → 400 e NÃO chama a Stripe', async () => {
-      const res = await request(app)
-        .post('/checkout')
-        .send({ ...bodyValido, amountInCents: 50 }); // abaixo do mínimo avulsa
-
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('error');
-      expect(mockedCreate).not.toHaveBeenCalled();
-    });
-
-    it('body vazio → 400', async () => {
-      const res = await request(app).post('/checkout').send({});
-
-      expect(res.status).toBe(400);
-      expect(mockedCreate).not.toHaveBeenCalled();
-    });
-
-    it('recorrente válido (≥2000) → 200 e repassa type=recorrente à Stripe', async () => {
-      mockedCreate.mockResolvedValue('https://checkout.stripe.com/c/pay/sub');
+    it('recorrente válida → 200 e cria assinatura (em centavos)', async () => {
+      mockSubscription.mockResolvedValue('https://asaas.com/i/sub');
 
       const res = await request(app)
         .post('/checkout')
         .send({ ...bodyValido, type: 'recorrente', amountInCents: 2000 });
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ checkoutUrl: 'https://checkout.stripe.com/c/pay/sub' });
-      expect(mockedCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'recorrente', amountInCents: 2000 }),
-      );
+      expect(res.body).toEqual({ checkoutUrl: 'https://asaas.com/i/sub' });
     });
 
-    it('recorrente abaixo do mínimo (1999) → 400 e NÃO chama a Stripe', async () => {
+    it('valor abaixo do mínimo → 400 e NÃO toca o Asaas', async () => {
+      const res = await request(app).post('/checkout').send({ ...bodyValido, amountInCents: 50 });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('error');
+      expect(mockCustomer).not.toHaveBeenCalled();
+    });
+
+    it('CPF inválido → 400', async () => {
       const res = await request(app)
         .post('/checkout')
-        .send({ ...bodyValido, type: 'recorrente', amountInCents: 1999 });
+        .send({ ...bodyValido, cpf: '111.111.111-11' });
 
       expect(res.status).toBe(400);
-      expect(mockedCreate).not.toHaveBeenCalled();
+      expect(mockCustomer).not.toHaveBeenCalled();
+    });
+
+    it('body vazio → 400', async () => {
+      const res = await request(app).post('/checkout').send({});
+      expect(res.status).toBe(400);
+      expect(mockCustomer).not.toHaveBeenCalled();
     });
   });
 
-  describe('POST /webhooks/stripe', () => {
-    it('assinatura válida → 200 { received:true } e processa o evento', async () => {
-      const fakeEvent = { type: 'checkout.session.completed' };
-      mockedConstruct.mockReturnValue(fakeEvent as never);
-      mockedHandle.mockResolvedValue(undefined);
-
-      const res = await request(app)
-        .post('/webhooks/stripe')
-        .set('stripe-signature', 't=1,v1=abc')
-        .set('content-type', 'application/json')
-        .send(Buffer.from(JSON.stringify({ id: 'evt_1' })));
-
-      expect(res.status).toBe(200);
-      expect(res.body).toEqual({ received: true });
-      expect(mockedHandle).toHaveBeenCalledWith(fakeEvent);
+  // EM MIGRAÇÃO (ADR-0005): webhook e cancelamento Asaas serão implementados nas
+  // issues #8/#10. Por ora respondem 501.
+  describe('rotas em migração', () => {
+    it('POST /webhooks/asaas → 501', async () => {
+      const res = await request(app).post('/webhooks/asaas').send({});
+      expect(res.status).toBe(501);
     });
 
-    it('recebe o RAW body (Buffer) — não foi parseado pelo express.json', async () => {
-      mockedConstruct.mockReturnValue({ type: 'x' } as never);
-      mockedHandle.mockResolvedValue(undefined);
-
-      await request(app)
-        .post('/webhooks/stripe')
-        .set('stripe-signature', 't=1,v1=abc')
-        .set('content-type', 'application/json')
-        .send(Buffer.from('{"id":"evt_1"}'));
-
-      expect(Buffer.isBuffer(mockedConstruct.mock.calls[0]![0])).toBe(true);
-    });
-
-    it('assinatura inválida → 400 e NÃO processa', async () => {
-      mockedConstruct.mockImplementation(() => {
-        throw new Error('bad signature');
-      });
-
-      const res = await request(app)
-        .post('/webhooks/stripe')
-        .set('stripe-signature', 'ruim')
-        .set('content-type', 'application/json')
-        .send(Buffer.from('{}'));
-
-      expect(res.status).toBe(400);
-      expect(mockedHandle).not.toHaveBeenCalled();
-    });
-
-    it('sem header stripe-signature → 400', async () => {
-      const res = await request(app)
-        .post('/webhooks/stripe')
-        .set('content-type', 'application/json')
-        .send(Buffer.from('{}'));
-
-      expect(res.status).toBe(400);
-      expect(mockedConstruct).not.toHaveBeenCalled();
-    });
-
-    it('erro interno ao processar → ainda responde 200 (idempotente, evita retry)', async () => {
-      mockedConstruct.mockReturnValue({ type: 'checkout.session.completed' } as never);
-      mockedHandle.mockRejectedValue(new Error('brevo caiu'));
-
-      const res = await request(app)
-        .post('/webhooks/stripe')
-        .set('stripe-signature', 't=1,v1=abc')
-        .set('content-type', 'application/json')
-        .send(Buffer.from('{}'));
-
-      expect(res.status).toBe(200);
-    });
-  });
-
-  describe('GET /billing-portal', () => {
-    it('token válido → 302 redirecionando p/ o portal da Stripe', async () => {
-      mockedPortal.mockResolvedValue('https://billing.stripe.com/p/session/xyz');
-      const token = signCustomerToken('cus_123');
-
-      const res = await request(app).get(`/billing-portal?t=${token}`);
-
-      expect(res.status).toBe(302);
-      expect(res.headers.location).toBe('https://billing.stripe.com/p/session/xyz');
-      expect(mockedPortal).toHaveBeenCalledWith('cus_123');
-    });
-
-    it('token inválido → 400 e NÃO abre portal', async () => {
-      const res = await request(app).get('/billing-portal?t=lixo');
-
-      expect(res.status).toBe(400);
-      expect(mockedPortal).not.toHaveBeenCalled();
-    });
-
-    it('sem token → 400', async () => {
-      const res = await request(app).get('/billing-portal');
-
-      expect(res.status).toBe(400);
-      expect(mockedPortal).not.toHaveBeenCalled();
+    it('GET /cancelar → 501', async () => {
+      const res = await request(app).get('/cancelar?t=qualquer');
+      expect(res.status).toBe(501);
     });
   });
 });

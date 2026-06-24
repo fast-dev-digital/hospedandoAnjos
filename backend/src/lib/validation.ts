@@ -18,6 +18,7 @@
 // =============================================================================
 import {validateAmount } from './money.js';
 import {normalizeE164} from './phone.js';
+import {validateCpf} from './cpf.js';
 import type { CheckoutRequest } from '../../../shared/checkout-contract.js';
 import type { MultiResult} from './result.js';
 
@@ -66,12 +67,22 @@ export function validateCheckout(body: unknown): MultiResult<CheckoutRequest> {
     else whatsappE164 = r.value;
   }
 
+  // cpf: valida dígito verificador e guarda só-dígitos (o Asaas exige cpfCnpj).
+  let cpfDigits = '';
+  if (typeof b.cpf !== 'string') {
+    errors.push('CPF é obrigatório');
+  } else {
+    const r = validateCpf(b.cpf);
+    if (!r.ok) errors.push(r.error);
+    else cpfDigits = r.value;
+  }
+
   if (errors.length > 0) {
     return { ok: false, errors };
   }
 
   // tudo válido -> devolve payload SANITIZADO (valor em centavos, whatsapp em
-  // E.164, strings trimadas)
+  // E.164, cpf só-dígitos, strings trimadas)
   return {
     ok: true,
     value: {
@@ -80,6 +91,7 @@ export function validateCheckout(body: unknown): MultiResult<CheckoutRequest> {
       name,
       email,
       whatsapp: whatsappE164,
+      cpf: cpfDigits,
     },
   };
 }

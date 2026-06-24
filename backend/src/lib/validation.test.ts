@@ -8,13 +8,14 @@ const valido = {
   name: 'Maria Silva',
   email: 'maria@exemplo.com',
   whatsapp: '+5511999998888',
+  cpf: '529.982.247-25', // CPF válido (formatado)
 };
 
 describe('validateCheckout', () => {
   describe('payload válido', () => {
-    it('aceita e devolve value sanitizado', () => {
+    it('aceita e devolve value sanitizado (cpf só-dígitos)', () => {
       const r = validateCheckout(valido);
-      expect(r).toEqual({ ok: true, value: valido });
+      expect(r).toEqual({ ok: true, value: { ...valido, cpf: '52998224725' } });
     });
 
     it('trima nome e email e normaliza o whatsapp', () => {
@@ -70,6 +71,18 @@ describe('validateCheckout', () => {
 
     it('rejeita whatsapp sem código de país', () => {
       const r = validateCheckout({ ...valido, whatsapp: '11999998888' });
+      expect(r.ok).toBe(false);
+    });
+
+    it('rejeita CPF inválido (dígito verificador)', () => {
+      const r = validateCheckout({ ...valido, cpf: '111.111.111-11' });
+      expect(r.ok).toBe(false);
+    });
+
+    it('rejeita CPF ausente', () => {
+      const { cpf, ...semCpf } = valido;
+      void cpf;
+      const r = validateCheckout(semCpf);
       expect(r.ok).toBe(false);
     });
   });
