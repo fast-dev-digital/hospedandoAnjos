@@ -24,13 +24,8 @@ import type { Result } from './result.js';
 const MIN_AVULSA = 100; // R$1,00
 const MIN_RECORRENTE = 2000; // R$20,00
 
-// converte um valor em REAIS (como o front digita: 20, 20.5) para CENTAVOS
-// inteiros (2000, 2050) que a Stripe e o resto do backend esperam.
-// Math.round evita o erro de float (20.5 * 100 = 2050.0000000000002).
-export function reaisToCents(reais: number): number {
-  return Math.round(reais * 100);
-}
-
+// NOTA: a conversão reais->centavos é feita no FRONTEND (parseToCents). O backend
+// recebe o valor já em centavos e aqui só revalida o mínimo (nunca confiar no browser).
 export function validateAmount(
     type: DonationType,
     amountInCents: number,

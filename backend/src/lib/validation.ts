@@ -16,7 +16,7 @@
 //     - normalizeE164(whatsapp)               propaga erro; usa value normalizado
 //     - retorna value já SANITIZADO (whatsapp em E.164, strings trimadas)
 // =============================================================================
-import {validateAmount, reaisToCents } from './money.js';
+import {validateAmount } from './money.js';
 import {normalizeE164} from './phone.js';
 import type { CheckoutRequest } from '../../../shared/checkout-contract.js';
 import type { MultiResult} from './result.js';
@@ -40,20 +40,18 @@ export function validateCheckout(body: unknown): MultiResult<CheckoutRequest> {
   const type = b.type;
   const name = str(b.name);
   const email = str(b.email);
-  const rawAmount = b.amountInCents;
+  const amountInCents = b.amountInCents;
 
   const typeOk = type === 'avulsa' || type === 'recorrente';
   if (!typeOk) errors.push('Tipo de doação inválido');
   if (name.length === 0) errors.push('Nome é obrigatório');
   if (!EMAIL_RE.test(email)) errors.push('E-mail inválido');
 
-  // o front envia o valor em REAIS; convertemos para centavos (reaisToCents)
-  // antes de validar o mínimo e seguir para a Stripe.
-  let amountInCents = 0;
-  if (typeof rawAmount !== 'number' || !Number.isFinite(rawAmount)) {
+  // o front já envia o valor em centavos (parseToCents). Aqui só revalidamos o
+  // mínimo — nunca confiar no browser. A conversão reais->centavos é do front.
+  if (typeof amountInCents !== 'number') {
     errors.push('Valor inválido');
   } else if (typeOk) {
-    amountInCents = reaisToCents(rawAmount);
     const r = validateAmount(type, amountInCents);
     if (!r.ok) errors.push(r.error);
   }
@@ -78,7 +76,7 @@ export function validateCheckout(body: unknown): MultiResult<CheckoutRequest> {
     ok: true,
     value: {
       type: type as CheckoutRequest['type'],
-      amountInCents,
+      amountInCents: amountInCents as number,
       name,
       email,
       whatsapp: whatsappE164,

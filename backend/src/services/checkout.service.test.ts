@@ -11,10 +11,10 @@ vi.mock('../integrations/stripe.js', () => ({
 
 const mockedCreate = vi.mocked(createCheckoutSession);
 
-// amountInCents no payload do front vem em REAIS; o backend converte.
+// o front já envia em centavos (parseToCents); o backend só revalida o mínimo.
 const bodyValido = {
   type: 'avulsa',
-  amountInCents: 50, // R$50,00 -> 5000 centavos após conversão
+  amountInCents: 5000, // R$50,00
   name: 'Maria Silva',
   email: 'maria@exemplo.com',
   whatsapp: '+5511999998888',
@@ -55,7 +55,7 @@ describe('startCheckout', () => {
 
   describe('payload inválido', () => {
     it('lança ValidationError e NÃO chama a Stripe', async () => {
-      await expect(startCheckout({ ...bodyValido, amountInCents: 0.5 })).rejects.toThrow(
+      await expect(startCheckout({ ...bodyValido, amountInCents: 50 })).rejects.toThrow(
         ValidationError,
       );
       expect(mockedCreate).not.toHaveBeenCalled();
