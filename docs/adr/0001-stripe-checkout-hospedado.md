@@ -4,7 +4,10 @@ Data: 2026-06-17
 
 ## Status
 
-Aceito
+Substituído pelo [ADR-0005](0005-migracao-stripe-para-asaas.md) (migração para o
+Asaas). O conceito de "checkout hospedado / redirect" permanece válido — o Asaas
+também usa página hospedada (`invoiceUrl`) — mas o gateway deixou de ser a Stripe.
+O conteúdo abaixo é mantido como registro histórico.
 
 ## Contexto
 

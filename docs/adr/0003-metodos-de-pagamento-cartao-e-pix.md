@@ -4,7 +4,11 @@ Data: 2026-06-17
 
 ## Status
 
-Aceito
+Substituído pelo [ADR-0005](0005-migracao-stripe-para-asaas.md) (migração para o
+Asaas). A regra "cartão + PIX, sem carteiras digitais" permanece, mas agora via
+Asaas: avulsa = PIX + cartão, recorrente = cartão, sem boleto. O motivo da
+migração foi justamente o PIX indisponível na avulsa da Stripe. O conteúdo abaixo
+é mantido como registro histórico.
 
 ## Contexto
 
