@@ -1,30 +1,21 @@
 // =============================================================================
 // routes/index.ts — liga URLs aos controllers.
 // =============================================================================
-// PSEUDOCÓDIGO / GUIA:
-//
-//   import { Router } from 'express';
-//   import { postCheckout } from '../controllers/checkout.controller';
-//   import { postStripeWebhook } from '../controllers/webhook.controller';
-//   import { postBillingPortal } from '../controllers/billing.controller';
-//
-//   const router = Router();
-//   router.get('/health', (_req, res) => res.json({ ok: true }));
-//   router.post('/checkout', postCheckout);
-//   router.post('/billing-portal', postBillingPortal);
-//   // NOTA: /webhooks/stripe é montado no app.ts ANTES do express.json(),
-//   // com o middleware rawBody — não aqui, p/ não perder o raw body.
-//   export default router;
+// Gateway: Asaas (ADR-0005). O webhook é rota JSON normal (sem rawBody).
+// `/cancelar` e `/webhooks/asaas` estão EM MIGRAÇÃO (stubs 501) até as issues
+// de webhook e cancelamento.
 // =============================================================================
 import { Router } from 'express';
 import { postCheckout } from '../controllers/checkout.controller.js';
-import { getBillingPortal } from '../controllers/billing.controller.js';
+import { cancelSubscription } from '../controllers/billing.controller.js';
+import { postAsaasWebhook } from '../controllers/webhook.controller.js';
 
 const rotas = Router();
-rotas.get('/health', (_req, res) => res.json({ok:true}));
+rotas.get('/health', (_req, res) => res.json({ ok: true }));
 rotas.post('/checkout', postCheckout);
-// link de cancelamento (clicado no e-mail) -> redireciona p/ o portal da Stripe.
-rotas.get('/billing-portal', getBillingPortal);
-// NOTA: /webhooks/stripe é montado no app.ts ANTES do express.json() (raw body).
+// link de cancelamento (clicado no e-mail) -> cancela a assinatura no Asaas.
+rotas.get('/cancelar', cancelSubscription);
+// webhook do Asaas (validação por token no header; rota JSON normal).
+rotas.post('/webhooks/asaas', postAsaasWebhook);
 
 export default rotas;
