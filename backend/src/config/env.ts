@@ -33,6 +33,10 @@ export const env = {
   // segredo p/ assinar o token do link de cancelamento (HMAC). Fica só no backend.
   BILLING_LINK_SECRET: required('BILLING_LINK_SECRET'),
   // base pública da API; usada p/ montar o link de cancelamento gravado no Brevo.
-  API_BASE_URL: process.env.API_BASE_URL || required('API_BASE_URL'),
-  PORT: Number(process.env.PORT || required('PORT')),
+  // tem default de dev -> NÃO é obrigatória (o dev/Coolify define quando precisa).
+  API_BASE_URL: process.env.API_BASE_URL ?? 'http://localhost:3000',
+  // PIX no checkout avulso. A Stripe BR só libera PIX após histórico (~60 dias);
+  // até lá fica 'false' e o avulso vai só com cartão. Ligar quando a Stripe liberar.
+  PIX_ENABLED: process.env.PIX_ENABLED === 'true',
+  PORT: Number(process.env.PORT ?? 3000),
 } as const;
