@@ -40,12 +40,14 @@ describe('createCheckoutSession', () => {
   });
 
   describe('avulsa', () => {
-    it('usa mode:payment, card + pix e SEM recurring', async () => {
+    // PIX_ENABLED é lido no boot do módulo; no setup de teste fica false (default),
+    // então a avulsa vai só com cartão — o estado atual até a Stripe liberar PIX.
+    it('usa mode:payment, SÓ card (PIX off por default) e SEM recurring', async () => {
       await createCheckoutSession({ ...base, type: 'avulsa', amountInCents: 5000 });
 
       const arg = createSession.mock.calls[0]![0];
       expect(arg.mode).toBe('payment');
-      expect(arg.payment_method_types).toEqual(['card', 'pix']);
+      expect(arg.payment_method_types).toEqual(['card']);
       expect(arg.line_items[0].price_data.recurring).toBeUndefined();
       expect(arg.metadata.type).toBe('avulsa');
     });

@@ -26,9 +26,14 @@ function getStripe(): Stripe {
 export async function createCheckoutSession(input: CheckoutRequest): Promise<string> {
   const isRecorrente = input.type === 'recorrente';
 
+  // recorrente -> só cartão (Stripe não suporta PIX recorrente). avulsa -> cartão
+  // + PIX, mas o PIX só entra se habilitado na conta (env.PIX_ENABLED), pois a
+  // Stripe BR libera PIX só após histórico de movimentação (~60 dias).
+  const avulsaMethods: ('card' | 'pix')[] = env.PIX_ENABLED ? ['card', 'pix'] : ['card'];
+
   const session = await getStripe().checkout.sessions.create({
     mode: isRecorrente ? 'subscription' : 'payment',
-    payment_method_types: isRecorrente ? ['card'] : ['card', 'pix'],
+    payment_method_types: isRecorrente ? ['card'] : avulsaMethods,
     line_items: [
       {
         quantity: 1,
