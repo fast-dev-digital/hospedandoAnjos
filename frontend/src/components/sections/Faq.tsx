@@ -41,12 +41,15 @@ export function Faq() {
               <div key={item.q}>
                 <button
                   type="button"
+                  id={`faq-pergunta-${i}`}
                   onClick={() => setOpen(isOpen ? null : i)}
                   aria-expanded={isOpen}
+                  aria-controls={`faq-resposta-${i}`}
                   className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
                 >
                   <span className="font-bold text-navy">{item.q}</span>
                   <span
+                    aria-hidden="true"
                     className={`shrink-0 text-2xl font-light text-gold transition-transform ${
                       isOpen ? 'rotate-45' : ''
                     }`}
@@ -55,7 +58,14 @@ export function Faq() {
                   </span>
                 </button>
                 {isOpen && (
-                  <p className="px-5 pb-5 text-ink-soft">{item.a}</p>
+                  <p
+                    id={`faq-resposta-${i}`}
+                    role="region"
+                    aria-labelledby={`faq-pergunta-${i}`}
+                    className="px-5 pb-5 text-ink-soft"
+                  >
+                    {item.a}
+                  </p>
                 )}
               </div>
             );

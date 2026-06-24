@@ -21,6 +21,21 @@ export function formatBRL(cents: number): string {
   });
 }
 
+/**
+ * BRL compacto para rótulos curtos (âncoras): omite os centavos quando o valor
+ * é redondo (2000 -> "R$ 20", 250000 -> "R$ 2.500"; mantém "R$ 20,50" se houver
+ * centavos). Evita rótulos largos demais nas células do grid no mobile.
+ */
+export function formatBRLShort(cents: number): string {
+  const hasCents = cents % 100 !== 0;
+  return (cents / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: hasCents ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+}
+
 /** Converte um texto digitado ("20", "20,50", "R$ 20") em centavos. */
 export function parseToCents(input: string): number {
   const cleaned = input.replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}\b)/g, '');

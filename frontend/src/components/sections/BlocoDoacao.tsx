@@ -8,6 +8,7 @@ import {
   ANCHORS_CENTS,
   MIN_CENTS,
   formatBRL,
+  formatBRLShort,
   isValidAmount,
   parseToCents,
 } from '@/lib/donation';
@@ -111,7 +112,7 @@ export function BlocoDoacao() {
                         : 'border-gold/40 bg-cream text-navy hover:border-navy'
                     }`}
                   >
-                    {formatBRL(value).replace(/\s/g, ' ')}
+                    {formatBRLShort(value)}
                   </button>
                 );
               })}
