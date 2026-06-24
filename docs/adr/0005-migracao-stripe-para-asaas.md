@@ -62,10 +62,15 @@ sessão de grill-me (entrevista estruturada), uma a uma:
    `GET /customers/{id}` no webhook (o cliente é a fonte da verdade).
 
 7. **Métodos: avulsa = PIX + cartão; recorrente = cartão.** Sem boleto (fricção
-   alta, ruim para doação por impulso). Como o boleto não é desejado, **não** se
-   usa `billingType: UNDEFINED` (que mostraria tudo); os métodos são especificados
-   por tipo de doação. PIX recorrente (PIX Automático) fica fora por ora — pode
-   exigir habilitação própria na conta; liga-se depois se desejado.
+   alta, ruim para doação por impulso). Implementação confirmada na doc do Asaas:
+   `billingType` **não aceita lista** — ou é um método único, ou `UNDEFINED`.
+   Para "PIX + cartão sem boleto" na avulsa, usa-se **`billingType: UNDEFINED`** na
+   API **+ boleto DESABILITADO nas configurações da conta** (o `UNDEFINED` respeita
+   só os métodos habilitados). A recorrente usa `billingType: CREDIT_CARD` fixo.
+   PIX recorrente (PIX Automático) fica fora por ora — pode exigir habilitação
+   própria na conta; liga-se depois se desejado.
+   > Config de conta necessária: **desabilitar o boleto** no painel do Asaas,
+   > senão ele aparece na avulsa (o `UNDEFINED` mostraria PIX + cartão + boleto).
 
 8. **Redirect mantido.** O backend cria a cobrança com `callback.successUrl =
    {FRONTEND_ORIGIN}/obrigado` e recebe `invoiceUrl` (página hospedada do Asaas).
