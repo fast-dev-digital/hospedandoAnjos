@@ -12,7 +12,7 @@
 //     catch (e):
 //       next(e)   // ValidationError -> 400 ; resto -> 500 (error handler)
 //
-// Sem regra de negócio aqui. Sem falar com Stripe direto.
+// Sem regra de negócio aqui. Sem falar com o Asaas direto.
 // =============================================================================
 import { startCheckout } from '../services/checkout.service.js';
 import type { Request, Response, NextFunction } from 'express';

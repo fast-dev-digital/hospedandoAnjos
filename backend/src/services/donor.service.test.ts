@@ -21,8 +21,8 @@ const avulsa = {
   name: 'Maria Silva',
   whatsapp: '+5511999998888',
   type: 'avulsa' as const,
-  valorCents: 5000,
-  customerId: 'cus_123',
+  valorReais: 50,
+  subscriptionId: 'sub_123',
   date: '2026-06-23T12:00:00.000Z',
 };
 
@@ -37,7 +37,7 @@ describe('registerDonation', () => {
         EMAIL: 'maria@exemplo.com',
         NOME: 'Maria Silva',
         WHATSAPP: '+5511999998888',
-        VALOR_ULTIMA: 5000,
+        VALOR_ULTIMA: 50,
         DATA_ULTIMA: '2026-06-23T12:00:00.000Z',
         TIPO_ULTIMA: 'avulsa',
       });
@@ -68,10 +68,10 @@ describe('registerDonation', () => {
           WHATSAPP: '+5511999998888',
           TIPO: 'recorrente',
           STATUS: 'ativo',
-          VALOR: 5000,
-          STRIPE_CUSTOMER_ID: 'cus_123',
+          VALOR: 50,
+          ASAAS_SUBSCRIPTION_ID: 'sub_123',
           DATA_PRIMEIRA_DOACAO: '2025-01-01T00:00:00.000Z',
-          VALOR_ULTIMA: 5000,
+          VALOR_ULTIMA: 50,
           DATA_ULTIMA: '2026-06-23T12:00:00.000Z',
           TIPO_ULTIMA: 'recorrente',
         }),
@@ -93,8 +93,8 @@ describe('registerDonation', () => {
       await registerDonation({ ...avulsa, type: 'recorrente' });
 
       const attrs = mockUpsert.mock.calls[0]![1];
-      // link aponta p/ a API (/billing-portal) e carrega o token assinado.
-      expect(String(attrs.LINK_CANCELAMENTO)).toMatch(/\/billing-portal\?t=.+/);
+      // link aponta p/ a API (/cancelar) e carrega o token assinado da assinatura.
+      expect(String(attrs.LINK_CANCELAMENTO)).toMatch(/\/cancelar\?t=.+/);
     });
 
     it('avulsa NÃO gera link de cancelamento (não é mantenedor)', async () => {
@@ -110,12 +110,12 @@ describe('registerRecurringRenewal (recibo mensal)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('atualiza SÓ o grupo última doação (TIPO_ULTIMA=recorrente); não toca mantenedora', async () => {
-    await registerRecurringRenewal('maria@exemplo.com', 2000);
+    await registerRecurringRenewal('maria@exemplo.com', 20);
 
     expect(mockUpsert).toHaveBeenCalledTimes(1);
     const [email, attrs] = mockUpsert.mock.calls[0]!;
     expect(email).toBe('maria@exemplo.com');
-    expect(attrs).toMatchObject({ VALOR_ULTIMA: 2000, TIPO_ULTIMA: 'recorrente' });
+    expect(attrs).toMatchObject({ VALOR_ULTIMA: 20, TIPO_ULTIMA: 'recorrente' });
     expect(attrs).toHaveProperty('DATA_ULTIMA'); // gatilho do e-mail mensal
     // não rebaixa nem regrava mantenedora
     expect(attrs).not.toHaveProperty('TIPO');

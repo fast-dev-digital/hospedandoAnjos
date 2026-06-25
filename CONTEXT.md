@@ -66,7 +66,7 @@ a última doação. Por isso os campos se dividem em **dois grupos** (decisão B
 | Atributo | Função |
 |---|---|
 | `TIPO` (= `recorrente`) | marca o vínculo de mantenedor; avulsa não sobrescreve |
-| `VALOR` | valor da assinatura mensal |
+| `VALOR` | valor da assinatura mensal, **em reais** (ex.: `20` / `20.00`) — gravado pronto p/ exibir no recibo (`{{VALOR}}`), não em centavos |
 | `STATUS` (ativo / falha_pagamento / inativo) | reflete a **assinatura recorrente** |
 | `ASAAS_SUBSCRIPTION_ID` (`sub_xxx`) | qual assinatura cancelar (o link de cancelamento assina este ID). O customer NÃO é gravado — é reachável pelo e-mail no Asaas |
 | `DATA_PRIMEIRA_DOACAO` | recibo / relatório futuro |
@@ -76,7 +76,7 @@ a última doação. Por isso os campos se dividem em **dois grupos** (decisão B
 
 | Atributo | Função |
 |---|---|
-| `VALOR_ULTIMA` | valor da doação mais recente |
+| `VALOR_ULTIMA` | valor da doação mais recente, **em reais** (mesmo formato de `VALOR`) |
 | `DATA_ULTIMA` | data da doação mais recente — **gatilho do n8n** |
 | `TIPO_ULTIMA` (recorrente / avulsa) | tipo da doação mais recente |
 

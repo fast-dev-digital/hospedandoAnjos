@@ -1,9 +1,8 @@
 // =============================================================================
 // routes/index.ts — liga URLs aos controllers.
 // =============================================================================
-// Gateway: Asaas (ADR-0005). O webhook é rota JSON normal (sem rawBody).
-// `/cancelar` e `/webhooks/asaas` estão EM MIGRAÇÃO (stubs 501) até as issues
-// de webhook e cancelamento.
+// Gateway: Asaas (ADR-0005). O webhook é rota JSON normal (sem rawBody, validado
+// por token no header). `/cancelar` valida o token assinado do subscription_id.
 // =============================================================================
 import { Router } from 'express';
 import { postCheckout } from '../controllers/checkout.controller.js';
