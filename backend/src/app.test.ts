@@ -5,7 +5,9 @@ import {
   findOrCreateCustomer,
   createPayment,
   createSubscription,
+  cancelSubscriptionById,
 } from './integrations/asaas.js';
+import { signSubscriptionToken } from './lib/billing-token.js';
 
 // Mocka o adapter do Asaas: sobe a app HTTP de verdade, mas NÃO toca a rede.
 // Testa a cadeia req -> rota -> controller -> service -> (asaas mockado) -> resposta.
@@ -13,11 +15,13 @@ vi.mock('./integrations/asaas.js', () => ({
   findOrCreateCustomer: vi.fn(),
   createPayment: vi.fn(),
   createSubscription: vi.fn(),
+  cancelSubscriptionById: vi.fn(),
 }));
 
 const mockCustomer = vi.mocked(findOrCreateCustomer);
 const mockPayment = vi.mocked(createPayment);
 const mockSubscription = vi.mocked(createSubscription);
+const mockCancel = vi.mocked(cancelSubscriptionById);
 const app = createApp();
 
 const bodyValido = {
@@ -88,17 +92,38 @@ describe('app (integração HTTP)', () => {
     });
   });
 
-  // EM MIGRAÇÃO (ADR-0005): webhook e cancelamento Asaas serão implementados nas
-  // issues #8/#10. Por ora respondem 501.
-  describe('rotas em migração', () => {
-    it('POST /webhooks/asaas → 501', async () => {
+  // Webhook Asaas (#8/#9): sem o token do header `asaas-access-token`, rejeita 401
+  // antes de tocar Asaas/Brevo. O roteamento por evento é testado em
+  // webhook.service.test.ts (unitário).
+  describe('webhook Asaas', () => {
+    it('POST /webhooks/asaas sem token → 401', async () => {
       const res = await request(app).post('/webhooks/asaas').send({});
-      expect(res.status).toBe(501);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  // Cancelamento (#10): GET /cancelar valida o token assinado (subscription_id) e
+  // chama DELETE no Asaas. O STATUS=inativo no Brevo vem depois, pelo webhook.
+  describe('cancelamento (GET /cancelar)', () => {
+    it('token válido → cancela a assinatura no Asaas e responde 200', async () => {
+      const token = signSubscriptionToken('sub_abc');
+      const res = await request(app).get(`/cancelar?t=${token}`);
+
+      expect(res.status).toBe(200);
+      expect(mockCancel).toHaveBeenCalledWith('sub_abc');
     });
 
-    it('GET /cancelar → 501', async () => {
-      const res = await request(app).get('/cancelar?t=qualquer');
-      expect(res.status).toBe(501);
+    it('token inválido → 400 e NÃO chama o Asaas', async () => {
+      const res = await request(app).get('/cancelar?t=lixo-forjado');
+
+      expect(res.status).toBe(400);
+      expect(mockCancel).not.toHaveBeenCalled();
+    });
+
+    it('sem token → 400', async () => {
+      const res = await request(app).get('/cancelar');
+      expect(res.status).toBe(400);
+      expect(mockCancel).not.toHaveBeenCalled();
     });
   });
 });
