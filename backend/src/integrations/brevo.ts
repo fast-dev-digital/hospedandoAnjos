@@ -4,7 +4,7 @@
 // CONTEXT.md: Brevo = CRM, upsert por EMAIL (uma linha por pessoa). Atributos:
 //   mantenedora: TIPO, VALOR, STATUS, ASAAS_SUBSCRIPTION_ID, DATA_PRIMEIRA_DOACAO
 //   última doação: VALOR_ULTIMA, DATA_ULTIMA (gatilho do n8n), TIPO_ULTIMA
-//   sempre: EMAIL, NOME, WHATSAPP
+//   sempre: EMAIL, NOME, WHATSAPP_NUM (WHATSAPP é reservado no Brevo — usar custom)
 //
 // Aqui é só transporte HTTP (fetch nativo do Node 22). A lógica de QUAIS campos
 // atualizar (regra dos 2 grupos) vive no donor.service, não aqui.

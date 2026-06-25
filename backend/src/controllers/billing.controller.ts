@@ -20,16 +20,21 @@ export async function cancelSubscription(req: Request, res: Response, next: Next
   const result = verifySubscriptionToken(token);
   if (!result.ok) {
     // token ausente/forjado/adulterado: 400, sem revelar detalhe (não é erro nosso).
-    return res.status(400).send('Link de cancelamento inválido ou expirado.');
+    // Resposta em JSON p/ a página /cancelar do frontend consumir (ok + message).
+    return res
+      .status(400)
+      .json({ ok: false, message: 'Link de cancelamento inválido ou expirado.' });
   }
 
   try {
     // 2. token válido -> result.value é o subscription_id assinado. Cancela no Asaas.
     await cancelSubscriptionById(result.value);
     // 3. confirma p/ o doador. O STATUS=inativo no Brevo virá pelo webhook.
-    return res
-      .status(200)
-      .send('Sua doação recorrente foi cancelada. Obrigado por ter apoiado o Hospedando Anjos. 💛');
+    return res.status(200).json({
+      ok: true,
+      message:
+        'Sua doação recorrente foi cancelada. Obrigado por ter apoiado o Hospedando Anjos. 💛',
+    });
   } catch (e) {
     // falha ao falar com o Asaas: vira 500 pelo error handler central.
     return next(e);
