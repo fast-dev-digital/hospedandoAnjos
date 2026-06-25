@@ -10,7 +10,7 @@
 //   import { env } from '../config/env';
 //   export const corsMiddleware = cors({ origin: env.FRONTEND_ORIGIN });
 //
-//   NOTA: o webhook da Stripe NÃO é chamado pelo browser -> não precisa de CORS.
+//   NOTA: o webhook do Asaas NÃO é chamado pelo browser -> não precisa de CORS.
 // =============================================================================
 import cors from 'cors';
 import { env } from '../config/env.js';

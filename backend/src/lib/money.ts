@@ -30,7 +30,7 @@ export function validateAmount(
     type: DonationType,
     amountInCents: number,
 ): Result {
-    // valor precisa ser inteiro positivo (Stripe trabalha em centavos inteiros).
+    // valor precisa ser inteiro positivo (nosso payload interno é em centavos).
     // Number.isInteger já barra NaN, fração e infinito de uma vez.
     if (amountInCents <= 0 || !Number.isInteger(amountInCents)) {
         return { ok: false, error: "Valor inválido" };
