@@ -36,7 +36,7 @@ describe('registerDonation', () => {
       expect(mockUpsert).toHaveBeenCalledWith('maria@exemplo.com', {
         EMAIL: 'maria@exemplo.com',
         NOME: 'Maria Silva',
-        WHATSAPP: '+5511999998888',
+        WHATSAPP_NUM: '+5511999998888',
         VALOR_ULTIMA: 50,
         DATA_ULTIMA: '2026-06-23T12:00:00.000Z',
         TIPO_ULTIMA: 'avulsa',
@@ -65,7 +65,7 @@ describe('registerDonation', () => {
         expect.objectContaining({
           EMAIL: 'maria@exemplo.com',
           NOME: 'Maria Silva',
-          WHATSAPP: '+5511999998888',
+          WHATSAPP_NUM: '+5511999998888',
           TIPO: 'recorrente',
           STATUS: 'ativo',
           VALOR: 50,

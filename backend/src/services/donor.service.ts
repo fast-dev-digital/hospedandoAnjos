@@ -39,7 +39,10 @@ export interface Donation {
 }
 
 export async function registerDonation(d: Donation): Promise<void> {
-  const base = { EMAIL: d.email, NOME: d.name, WHATSAPP: d.whatsapp };
+  // WHATSAPP é atributo RESERVADO do Brevo: passá-lo no POST de um contato que
+  // ainda não existe retorna 404 (document_not_found) em vez de criar — quebrava
+  // todo 1º pagamento de doador novo. Usamos o custom WHATSAPP_NUM (text).
+  const base = { EMAIL: d.email, NOME: d.name, WHATSAPP_NUM: d.whatsapp };
   const ultima = {
     VALOR_ULTIMA: d.valorReais,
     DATA_ULTIMA: d.date, // gatilho do n8n que faz mandar agradecimento ao manychat
