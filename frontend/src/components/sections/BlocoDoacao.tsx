@@ -8,6 +8,7 @@ import {
   ANCHORS_CENTS,
   MIN_CENTS,
   formatBRL,
+  formatBRLShort,
   isValidAmount,
   parseToCents,
 } from '@/lib/donation';
@@ -84,6 +85,17 @@ export function BlocoDoacao() {
             />
           </div>
 
+          {/* Formas de pagamento por tipo (reflete o toggle — FRONT-END-CONTEXT §6).
+              recorrente → só cartão; avulsa → cartão ou PIX. */}
+          <p
+            aria-live="polite"
+            className="mt-2.5 text-center text-xs text-ink-soft"
+          >
+            {type === 'recorrente'
+              ? 'Pagamento no cartão de crédito.'
+              : 'Pagamento no cartão de crédito ou via PIX.'}
+          </p>
+
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             {/* Âncoras de valor */}
             <div className="grid grid-cols-3 gap-2">
@@ -100,7 +112,7 @@ export function BlocoDoacao() {
                         : 'border-gold/40 bg-cream text-navy hover:border-navy'
                     }`}
                   >
-                    {formatBRL(value).replace(/\s/g, ' ')}
+                    {formatBRLShort(value)}
                   </button>
                 );
               })}
@@ -125,7 +137,10 @@ export function BlocoDoacao() {
                 )}
               </div>
               {cents > 0 && !amountOk && (
-                <span className="mt-1.5 block text-sm font-semibold text-prism-red">
+                <span
+                  role="alert"
+                  className="mt-1.5 block text-sm font-semibold text-prism-red"
+                >
                   Valor mínimo para doação {type}: {formatBRL(MIN_CENTS[type])}
                   {type === 'recorrente' ? '/mês' : ''}.
                 </span>
@@ -162,14 +177,20 @@ export function BlocoDoacao() {
                 inputProps={{ autoComplete: 'tel', 'aria-label': 'WhatsApp com código do país' }}
               />
               {whatsappTyped && !whatsappValid && (
-                <span className="mt-1.5 block text-sm font-semibold text-prism-red">
+                <span
+                  role="alert"
+                  className="mt-1.5 block text-sm font-semibold text-prism-red"
+                >
                   Número de WhatsApp inválido para o país selecionado.
                 </span>
               )}
             </label>
 
             {error && (
-              <p className="rounded-lg bg-prism-red/10 px-3 py-2 text-sm font-semibold text-prism-red">
+              <p
+                role="alert"
+                className="rounded-lg bg-prism-red/10 px-3 py-2 text-sm font-semibold text-prism-red"
+              >
                 {error}
               </p>
             )}

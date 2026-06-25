@@ -28,11 +28,13 @@ export function Hero() {
       <div className="mx-auto max-w-3xl text-center">
         <AngelWings className="mx-auto mb-2 w-56 text-gold sm:w-72" />
 
-        <p className="font-display text-3xl font-semibold uppercase tracking-[0.12em] text-navy sm:text-4xl">
-          Hospedando
-        </p>
-        <h1 className="-mt-2 font-script text-7xl text-navy sm:text-8xl">
-          anjos
+        <h1>
+          <span className="block font-display text-3xl font-semibold uppercase tracking-[0.12em] text-navy sm:text-4xl">
+            Hospedando
+          </span>
+          <span className="-mt-2 block font-script text-7xl text-navy sm:text-8xl">
+            anjos
+          </span>
         </h1>
 
         <div className="mx-auto mt-3 flex items-center justify-center gap-3">
