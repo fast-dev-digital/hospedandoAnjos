@@ -124,6 +124,17 @@ export async function createPayment(input: {
   return payment.invoiceUrl;
 }
 
+// cancela uma assinatura (DELETE /subscriptions/{id}). Usado pelo link de
+// cancelamento do e-mail (#10). O Asaas dispara SUBSCRIPTION_DELETED em seguida —
+// é o webhook (não este DELETE) que marca STATUS=inativo no Brevo (ADR-0005 #10).
+export async function cancelSubscriptionById(subscriptionId: string): Promise<void> {
+  const res = await fetch(`${env.ASAAS_BASE_URL}/subscriptions/${subscriptionId}`, {
+    method: 'DELETE',
+    headers: headers(),
+  });
+  if (!res.ok) await fail(res, 'cancelamento de assinatura');
+}
+
 // assinatura RECORRENTE mensal, só cartão. A 1ª cobrança é criada DEPOIS da
 // assinatura (não vem na resposta) -> buscamos via GET /subscriptions/{id}/payments
 // p/ obter a invoiceUrl. (Documentado: assinatura não retorna a cobrança na criação.)
