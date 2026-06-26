@@ -80,7 +80,11 @@ a última doação. Por isso os campos se dividem em **dois grupos** (decisão B
 | `DATA_ULTIMA` | data da doação mais recente — **gatilho do n8n** |
 | `TIPO_ULTIMA` (recorrente / avulsa) | tipo da doação mais recente |
 
-Sempre presentes: `EMAIL`, `NOME`, `WHATSAPP` (E.164).
+Sempre presentes: `EMAIL`, `NOME`, `WHATSAPP_NUM` (E.164). ⚠️ `WHATSAPP` é
+atributo **reservado** do Brevo — gravá-lo via `attributes` ao **criar** um contato
+novo retorna `404 document_not_found` (quebra todo 1º pagamento de doador novo). Por
+isso o número vai no atributo **custom `WHATSAPP_NUM`** (type text). A automação do
+n8n/Manychat deve ler `WHATSAPP_NUM`, não `WHATSAPP`.
 
 **Regra de upsert no webhook `PAYMENT_CONFIRMED`** (o backend distingue o tipo pelo
 campo `subscription` do evento: preenchido = recorrente; `null` = avulsa):
