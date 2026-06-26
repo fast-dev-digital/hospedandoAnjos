@@ -216,10 +216,17 @@ Equipe Hospedando Anjos
 ---
 
 ## ⚠️ Pendências que NÃO são do Brevo (mas afetam o recibo)
-1. **`API_BASE_URL` em produção.** Hoje o `.env` aponta `http://localhost:3000`,
-   então o `LINK_CANCELAMENTO` gravado no Brevo abre localhost — **inútil p/ o
-   doador**. Trocar p/ o domínio público do backend ANTES de ir ao ar. (Recriar/
-   regravar os contatos de teste, ou só valer p/ doações novas.)
+1. **`FRONTEND_ORIGIN` e `API_BASE_URL` em produção (cancelamento).** O fluxo de
+   cancelamento depende das DUAS vars, e elas têm papéis distintos:
+   - `LINK_CANCELAMENTO` (gravado no Brevo, vai no e-mail) = **`FRONTEND_ORIGIN`**`/cancelar?t=…`
+     → abre a **página /cancelar do front** (não mais a API; corrigido em
+     `donor.service.ts` após integração com o front).
+   - A página do front faz fetch ao **`API_BASE_URL`**`/cancelar?t=…` (mesmo token)
+     → backend valida + `DELETE /subscriptions`.
+   ⚠️ Hoje no `.env`: `FRONTEND_ORIGIN=https://anjos.prismabrasil.com.br` (ok), mas
+   **`API_BASE_URL=http://localhost:3000`**. No deploy (Coolify), `API_BASE_URL`
+   PRECISA virar o domínio público do backend, senão a página do front tenta chamar
+   localhost e o cancelamento falha. Ajustar AMBAS antes de ir ao ar.
 2. **Asaas em produção:** trocar `ASAAS_API_KEY` (hoje `aact_hmlg_`/sandbox) e
    `ASAAS_BASE_URL` p/ produção; **recadastrar o webhook** no painel de produção
    apontando p/ o domínio real (a URL ngrok desta sessão é temporária).
