@@ -12,7 +12,7 @@ const FAQ = [
   },
   {
     q: 'O pagamento é seguro?',
-    a: 'Sim. Todo o pagamento é processado pela Stripe, líder mundial em pagamentos. Não armazenamos dados do seu cartão.',
+    a: 'Sim. Todo o pagamento é processado pela Asaas, instituição de pagamento regulada no Brasil. Não armazenamos dados do seu cartão.',
   },
   {
     q: 'Quais formas de pagamento posso usar?',

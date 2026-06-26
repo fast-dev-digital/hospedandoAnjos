@@ -12,6 +12,7 @@ import {
   isValidAmount,
   parseToCents,
 } from '@/lib/donation';
+import { formatCpf, isValidCpf, onlyDigits } from '@/lib/cpf';
 import { Heart } from '@/components/brand/Decor';
 
 export function BlocoDoacao() {
@@ -21,14 +22,20 @@ export function BlocoDoacao() {
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [whatsappTyped, setWhatsappTyped] = useState(false);
+  const [cpf, setCpf] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const cents = useMemo(() => parseToCents(amountText), [amountText]);
   const amountOk = isValidAmount(type, cents);
   const whatsappValid = whatsapp.trim() !== '' && isValidPhoneNumber(whatsapp);
+  const cpfValid = isValidCpf(cpf);
   const formValid =
-    amountOk && name.trim() !== '' && email.trim() !== '' && whatsappValid;
+    amountOk &&
+    name.trim() !== '' &&
+    email.trim() !== '' &&
+    whatsappValid &&
+    cpfValid;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +54,7 @@ export function BlocoDoacao() {
         name: name.trim(),
         email: email.trim(),
         whatsapp: whatsapp.trim(),
+        cpf: onlyDigits(cpf),
       });
       window.location.href = checkoutUrl; // redirect para o Stripe Checkout hospedado
     } catch {
@@ -186,6 +194,26 @@ export function BlocoDoacao() {
               )}
             </label>
 
+            <div>
+              <Field
+                label="CPF"
+                value={cpf}
+                onChange={(v) => setCpf(formatCpf(v))}
+                inputMode="numeric"
+                maxLength={14}
+                placeholder="000.000.000-00"
+                autoComplete="off"
+              />
+              {cpf !== '' && !cpfValid && (
+                <span
+                  role="alert"
+                  className="mt-1.5 block text-sm font-semibold text-prism-red"
+                >
+                  CPF inválido.
+                </span>
+              )}
+            </div>
+
             {error && (
               <p
                 role="alert"
@@ -208,7 +236,7 @@ export function BlocoDoacao() {
             </button>
 
             <p className="text-center text-xs text-ink-soft">
-              Pagamento seguro processado pela Stripe. Você será redirecionado
+              Pagamento seguro processado pela Asaas. Você será redirecionado
               para concluir.
             </p>
           </form>
@@ -253,6 +281,8 @@ function Field({
   type = 'text',
   placeholder,
   autoComplete,
+  inputMode,
+  maxLength,
 }: {
   label: string;
   value: string;
@@ -260,6 +290,8 @@ function Field({
   type?: string;
   placeholder?: string;
   autoComplete?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+  maxLength?: number;
 }) {
   return (
     <label className="block">
@@ -269,6 +301,8 @@ function Field({
         value={value}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        inputMode={inputMode}
+        maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
         required
         className="w-full rounded-xl border border-gold/40 bg-cream px-4 py-3 text-navy outline-none transition-colors placeholder:text-ink-soft/60 focus:border-navy"

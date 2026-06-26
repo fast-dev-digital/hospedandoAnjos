@@ -17,7 +17,12 @@ doação e (3) **dissolver objeções** (FAQ). Mobile-first, foco em **fricção
 checkout em < 20s**.
 
 Divisão de trabalho: **Victor → `frontend/`** (esta landing). **Gabriel → backend**
-(Stripe, n8n, Brevo, Manychat) — pasta ainda inexistente no repo.
+(Asaas, n8n, Brevo, Manychat).
+
+> **Gateway: Asaas** (não mais Stripe). A Stripe não liberava PIX na avulsa sem ~60
+> dias de movimentação; a migração e suas decisões estão no
+> [ADR-0005](../docs/adr/0005-migracao-stripe-para-asaas.md). Os ADRs 0001/0003
+> (Stripe) ficam como histórico.
 
 ---
 
@@ -28,9 +33,9 @@ Divisão de trabalho: **Victor → `frontend/`** (esta landing). **Gabriel → b
 | Framework | **React + Vite + TypeScript** (build estático) — ver `../CONTEXT.md`. |
 | Hospedagem | **Firebase Hosting** (decisão do usuário; o front **não** vai no Coolify). |
 | Domínio do front | **`anjos.prismabrasil.com.br`** (subdomínio). |
-| Pagamento | **Stripe Checkout hospedado** (redirect). O front nunca processa cartão (ADR-0001). |
-| Contrato front↔back | Tipos TS em `../shared/checkout-contract.ts` (compartilhado). |
-| Variáveis públicas | URL base da API + Stripe **publishable key** (`pk_…`). Segredos `sk_…` nunca no front. |
+| Pagamento | **Asaas — checkout/cobrança hospedada** (redirect via `invoiceUrl`). O front nunca processa cartão (ADR-0005). |
+| Contrato front↔back | Tipos TS em `../shared/checkout-contract.ts` (compartilhado). Inclui `cpf` (obrigatório no Asaas). |
+| Variáveis públicas | URL base da API (`VITE_API_BASE_URL`). O Asaas não usa chave pública no front; segredos ficam só no backend. |
 
 > **Nota infra:** o `CONTEXT.md` cita Coolify/VPS — aquilo descreve o **backend**.
 > O front foi decidido em **Firebase Hosting**.
@@ -49,9 +54,16 @@ Divisão de trabalho: **Victor → `frontend/`** (esta landing). **Gabriel → b
 6. **Rodapé** — institucional, contato.
 
 **Pós-pagamento — rota dedicada `/obrigado`** (decidido): página própria, não seção.
-É o destino da `success_url` da Stripe; exibe mensagem de agradecimento ao usuário,
-**sem efeito colateral** (o cadastro no Brevo é feito pelo webhook no backend, nunca
-no retorno — o doador pode fechar a aba ou o PIX pode não ter compensado ainda).
+É o destino do redirect pós-checkout do Asaas; exibe mensagem de agradecimento ao
+usuário, **sem efeito colateral** (o cadastro no Brevo é feito pelo webhook no
+backend, nunca no retorno — o doador pode fechar a aba ou o PIX pode não ter
+compensado ainda).
+
+**Cancelamento — rota dedicada `/cancelar`** (decidido): página "burra" que recebe o
+link assinado do e-mail (`/cancelar?t=<token>`, variável `{{LINK_CANCELAMENTO}}` do
+Brevo). Ao montar, chama `GET {API_BASE}/cancelar?t=<token>` e mostra o resultado.
+**1 clique cancela, sem confirmação** (ADR-0005 #3); não recebe nem exibe dados do
+doador (o token só permite cancelar, não consultar).
 
 ---
 
@@ -101,15 +113,22 @@ molduras curvas.
 ## 5. Fluxo de doação
 
 1. Doador preenche o bloco de doação: `type` (avulsa/recorrente), valor, nome,
-   e-mail, WhatsApp (**E.164 com código de país**, sem default `+55`).
-2. Front faz `POST /checkout` → backend cria a **Stripe Checkout Session hospedada**
-   e devolve `{ checkoutUrl }`.
-3. Front **apenas redireciona** para `checkoutUrl` (destino é a tela hospedada da Stripe).
-4. Retorno na `success_url` → exibe mensagem de obrigado. **Sem efeito colateral.**
+   e-mail, WhatsApp (**E.164 com código de país**, sem default `+55`) e **CPF**
+   (obrigatório no Asaas; validado no front por módulo 11 — `lib/cpf.ts`).
+2. Front faz `POST /checkout` → backend cria a **cobrança/checkout hospedada no
+   Asaas** e devolve `{ checkoutUrl }` (o `invoiceUrl` do Asaas).
+3. Front **apenas redireciona** para `checkoutUrl` (destino é a tela hospedada do Asaas).
+4. Retorno no redirect → exibe mensagem de obrigado. **Sem efeito colateral.**
 
-**Mock até o backend existir:** a API do Gabriel ainda não existe. Desenvolver o
-front contra um **mock do `POST /checkout`** que devolve um `checkoutUrl` (pode ser
-um Stripe Checkout de teste). Quando a API real subir, troca-se só a URL base.
+**Cancelamento (recorrente):** o e-mail traz `/cancelar?t=<token>`; a página
+`/cancelar` chama `GET {API_BASE}/cancelar?t=<token>` (helper `lib/cancel.ts`) e
+exibe loading → sucesso/inválido/erro. Resposta do backend: `200 {ok:true,message}`,
+`400 {ok:false,message}`.
+
+**Mock até o backend subir:** enquanto `VITE_API_BASE_URL` não estiver definida,
+`lib/checkout.ts` e `lib/cancel.ts` usam **mocks** (checkout devolve a própria
+`/obrigado`; cancelamento devolve sucesso). Quando a API real subir, troca-se só a
+URL base.
 
 ---
 
@@ -122,6 +141,8 @@ um Stripe Checkout de teste). Quando a API real subir, troca-se só a URL base.
   **VPS/Coolify** da Fast. Front referencia a API por variável de ambiente (URL real ⏳).
 - **Validação de valor é do backend** (nunca confiar no browser). Mínimos:
   **avulsa R$1,00 (100c)**, **recorrente R$20,00 (2000c)**. O front espelha para UX.
+- **CPF obrigatório** (Asaas exige para criar o cliente). O front valida por módulo 11
+  (`lib/cpf.ts`, espelha `backend/src/lib/cpf.ts`) e envia só dígitos; o backend revalida.
 - **Métodos por tipo:** recorrente → **só cartão**; avulsa → **cartão + PIX**
   (sem Apple/Google Pay). A UI deve refletir isso ao alternar o toggle.
 - **CORS:** backend libera só a origem do front. URL da API vem de variável de ambiente.
@@ -137,6 +158,9 @@ um Stripe Checkout de teste). Quando a API real subir, troca-se só a URL base.
       com placeholders fiéis** à `referencia-design-system.jpeg` até o cliente entregar.
 - [x] **Pós-pagamento:** ~~rota × seção~~ → **rota dedicada `/obrigado`**.
 - [x] **Dono do `shared/checkout-contract.ts`:** ~~confirmar~~ → **Gabriel** (backend).
+- [x] **Migração de gateway:** ~~Stripe~~ → **Asaas** (ADR-0005).
+- [x] **CPF no formulário:** campo + validação módulo 11 (`lib/cpf.ts`) + envio no payload.
+- [x] **Página `/cancelar`:** cancelamento de recorrente por link assinado (1 clique).
 - [ ] **Teto de valores** (avulsa e recorrente) — a fechar com stakeholders (mínimos já definidos).
 - [ ] **URL base real da API** — depende do backend do Gabriel (VPS/Coolify); usar mock até lá.
 - [ ] **Fontes web:** proposta = Playfair Display / Cinzel / Great Vibes / Nunito Sans

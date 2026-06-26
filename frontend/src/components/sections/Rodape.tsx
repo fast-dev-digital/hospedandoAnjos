@@ -46,7 +46,7 @@ export function Rodape() {
       <div className="flex flex-col items-center gap-2 border-t border-white/10 px-5 py-5 text-center text-xs text-cream/60 sm:flex-row sm:justify-between">
         <span>
           © {new Date().getFullYear()} Associação Prisma Brasil · Pagamentos
-          processados com segurança pela Stripe
+          processados com segurança pela Asaas
         </span>
         <span>
           Desenvolvido por{' '}

@@ -8,7 +8,7 @@ const PASSOS = [
   {
     n: '02',
     titulo: 'Pagamento seguro',
-    texto: 'Concluído no ambiente da Stripe — cartão ou PIX. Não guardamos dados do cartão.',
+    texto: 'Concluído no ambiente da Asaas — cartão ou PIX. Não guardamos dados do cartão.',
   },
   {
     n: '03',

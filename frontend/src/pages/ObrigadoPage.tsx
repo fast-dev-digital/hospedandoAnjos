@@ -106,7 +106,7 @@ export function ObrigadoPage() {
           </Link>
 
           <p className="mt-5 text-sm text-ink-soft">
-            Pagamento processado com segurança pela Stripe.
+            Pagamento processado com segurança pela Asaas.
           </p>
         </div>
       </main>
