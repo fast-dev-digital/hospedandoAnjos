@@ -17,11 +17,13 @@ import { signSubscriptionToken } from '../lib/billing-token.js';
 import { env } from '../config/env.js';
 import type { DonationType } from '../../../shared/checkout-contract.js';
 
-// monta o link de cancelamento (forma B): aponta p/ a API com o token assinado da
-// assinatura. O Brevo só insere este campo no e-mail; quem o gera com segurança é
-// o backend. A rota /cancelar valida o token e chama DELETE /subscriptions/{id}.
+// monta o link de cancelamento (forma B): aponta p/ a PÁGINA /cancelar do FRONT
+// (não a API), com o token assinado da assinatura. O Brevo insere este link no
+// e-mail; ao clicar, a página do front abre e repassa o MESMO token ao
+// GET {API_BASE_URL}/cancelar, que valida e chama DELETE /subscriptions/{id}.
+// (Se apontasse p/ a API, o doador veria o JSON cru em vez da página.)
 function linkCancelamento(subscriptionId: string): string {
-  return `${env.API_BASE_URL}/cancelar?t=${signSubscriptionToken(subscriptionId)}`;
+  return `${env.FRONTEND_ORIGIN}/cancelar?t=${signSubscriptionToken(subscriptionId)}`;
 }
 
 export interface Donation {

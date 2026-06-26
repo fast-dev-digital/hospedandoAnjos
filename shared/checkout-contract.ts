@@ -26,7 +26,8 @@ export interface CheckoutRequest {
   cpf: string;
 }
 
-/** Resposta do BACKEND: URL hospedada da Stripe para o frontend redirecionar. */
+/** Resposta do BACKEND: URL da página de pagamento hospedada (Asaas invoiceUrl)
+ * para o frontend redirecionar. Nome genérico `checkoutUrl` mantido na migração. */
 export interface CheckoutResponse {
   checkoutUrl: string;
 }
