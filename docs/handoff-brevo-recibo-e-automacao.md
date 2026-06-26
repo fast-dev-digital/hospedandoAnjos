@@ -128,11 +128,18 @@ Em todo `PAYMENT_CONFIRMED`, chama `POST /v3/events` do Brevo:
 
 ### ⏳ Pegadinha conhecida: DELAY de indexação do evento
 O `doacao_confirmada` **só aparece como opção no gatilho depois que o Brevo indexa** o
-evento — pode levar de minutos a **horas** (a doc do Brevo confirma; há relato de "só
-no dia seguinte"). **O evento chegando no histórico do contato NÃO é o mesmo que ele
-estar disponível no gatilho.** Se o dropdown do gatilho estiver vazio: **não é bug** —
-o backend está disparando certo (confirmado no histórico do contato); é só esperar e
-recarregar a automação. Disparar o evento algumas vezes ajuda a "acordar" a indexação.
+evento. **O evento chegando no histórico do contato NÃO é o mesmo que ele estar
+disponível no gatilho.** Se o dropdown do gatilho estiver vazio: **não é bug** — o
+backend está disparando certo (confirmado no histórico do contato); é só esperar.
+
+**Tempo esperado (não há prazo oficial do Brevo; dados da comunidade):**
+- A **1ª indexação de um tipo de evento novo é lenta**: de horas a **~2-3 dias**
+  (relato: "deixei no fim de semana, na segunda apareceu").
+- Depois que o tipo é registrado, **novos disparos aparecem imediatamente**.
+- **Não dá p/ acelerar** — a resolução é passiva (esperar); disparar mais vezes não
+  comprovadamente ajuda. Já disparamos `doacao_confirmada` várias vezes em 2026-06-25,
+  então o relógio da 1ª indexação já está correndo.
+- **Decisão (2026-06-25):** esperar a indexação (não migrar p/ o plano B do n8n agora).
 
 ### Alternativa se a indexação demorar demais (plano B)
 Se o gatilho de evento nunca aparecer / for inviável, o caminho do **ADR-0004** resolve
