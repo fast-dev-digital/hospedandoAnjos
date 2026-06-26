@@ -56,3 +56,30 @@ export async function getContact(email: string): Promise<BrevoAttributes | null>
   const data = (await res.json()) as { attributes?: BrevoAttributes };
   return data.attributes ?? {};
 }
+
+// Dispara um evento no Brevo (API moderna POST /v3/events, mesma api-key da API
+// normal — NÃO usa a ma-key legada do trackEvent). É o GATILHO do recibo: a
+// automação do Brevo usa "um evento foi rastreado" (event_name=doacao_confirmada)
+// e dispara em TODA doação — avulsa, recorrente E renovação mensal (ao contrário
+// de "adicionado à lista", que só dispara na 1ª vez). As `event_properties` ficam
+// disponíveis no template do recibo (NOME, VALOR, etc.).
+export async function sendDonationEvent(
+  email: string,
+  properties: Record<string, string | number>,
+): Promise<void> {
+  const res = await fetch(`${BASE}/events`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      event_name: 'doacao_confirmada',
+      identifiers: { email_id: email },
+      event_properties: properties,
+    }),
+  });
+
+  // /v3/events responde 204 No Content em sucesso. Não relança erro fatal: o recibo
+  // não pode derrubar o webhook (o cadastro no Brevo já foi feito); só registra.
+  if (!res.ok && res.status !== 204) {
+    console.error(`Brevo sendDonationEvent falhou (${res.status}): ${await res.text()}`);
+  }
+}

@@ -16,6 +16,7 @@
 // =============================================================================
 
 import { getCustomer } from '../integrations/asaas.js';
+import { sendDonationEvent } from '../integrations/brevo.js';
 import {
   registerDonation,
   markPaymentFailed,
@@ -64,6 +65,16 @@ export async function handleAsaasEvent(event: AsaasWebhookEvent): Promise<void> 
         // na recorrente; na avulsa é null e o donor.service não grava mantenedora.
         subscriptionId: payment.subscription,
         date: new Date().toISOString(),
+      });
+
+      // dispara o evento que aciona o recibo no Brevo. Roda em TODA doação
+      // confirmada (avulsa, recorrente e renovação) — é o que o usuário precisa.
+      // O LINK_CANCELAMENTO o recibo lê do contato ({{contact.LINK_CANCELAMENTO}}),
+      // já gravado pelo registerDonation acima; aqui mandamos só o que varia.
+      await sendDonationEvent(customer.email, {
+        NOME: customer.name ?? '',
+        VALOR: payment.value,
+        TIPO: isRecorrente ? 'recorrente' : 'avulsa',
       });
       return;
     }
