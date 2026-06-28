@@ -1,4 +1,9 @@
 import logoPrisma from '@/assets/logo-prisma.webp';
+import {
+  CONTATO,
+  CONTATO_EMAIL_HREF,
+  CONTATO_WHATSAPP_HREF,
+} from '@/lib/contato';
 
 export function Rodape() {
   return (
@@ -35,10 +40,33 @@ export function Rodape() {
           <h4 className="text-sm font-bold uppercase tracking-wide text-gold-soft">
             Contato
           </h4>
-          {/* PLACEHOLDER — dados oficiais a confirmar com o cliente */}
+          {/* Canais oficiais (lib/contato.ts). WhatsApp: confirmar o número real. */}
           <ul className="mt-3 space-y-2 text-sm text-cream/80">
-            <li>contato@prismabrasil.com.br</li>
-            <li>@prismabrasil</li>
+            <li>
+              <a href={CONTATO_EMAIL_HREF} className="hover:text-cream">
+                {CONTATO.email}
+              </a>
+            </li>
+            <li>
+              <a
+                href={CONTATO.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-cream"
+              >
+                {CONTATO.instagram}
+              </a>
+            </li>
+            <li>
+              <a
+                href={CONTATO_WHATSAPP_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-cream"
+              >
+                WhatsApp {CONTATO.whatsappLabel}
+              </a>
+            </li>
           </ul>
         </div>
       </div>

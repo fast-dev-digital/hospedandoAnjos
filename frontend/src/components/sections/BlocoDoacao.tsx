@@ -13,6 +13,7 @@ import {
   parseToCents,
 } from '@/lib/donation';
 import { formatCpf, isValidCpf, onlyDigits } from '@/lib/cpf';
+import { CONTATO } from '@/lib/contato';
 import { Heart } from '@/components/brand/Decor';
 
 export function BlocoDoacao() {
@@ -58,7 +59,9 @@ export function BlocoDoacao() {
       });
       window.location.href = checkoutUrl; // redirect para o Stripe Checkout hospedado
     } catch {
-      setError('Não foi possível iniciar o pagamento. Tente novamente.');
+      setError(
+        `Não foi possível iniciar o pagamento. Tente novamente — se persistir, fale com a gente: ${CONTATO.email} ou Instagram ${CONTATO.instagram}.`,
+      );
       setSubmitting(false);
     }
   }

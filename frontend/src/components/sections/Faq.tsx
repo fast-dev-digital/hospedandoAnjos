@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CONTATO } from '@/lib/contato';
 
 // PLACEHOLDER fiel à identidade — perguntas/respostas reais virão do cliente.
 const FAQ = [
@@ -21,6 +22,10 @@ const FAQ = [
   {
     q: 'Vou receber um recibo?',
     a: 'Sim. Após a confirmação, enviamos o agradecimento e o recibo pelos nossos canais oficiais.',
+  },
+  {
+    q: 'Tive um problema com a doação. Com quem falo?',
+    a: `Se algo deu errado — pagamento, recibo ou cancelamento — fale com a gente pelos nossos canais oficiais e nós ajudamos: Instagram ${CONTATO.instagram}, e-mail ${CONTATO.email} ou WhatsApp ${CONTATO.whatsappLabel}.`,
   },
 ];
 

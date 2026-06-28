@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { AngelWings, Halo, Heart } from '@/components/brand/Decor';
 import { cancelDonation, type CancelResult } from '@/lib/cancel';
 import logoPrisma from '@/assets/logo-prisma.webp';
+import { CONTATO, CONTATO_EMAIL_HREF } from '@/lib/contato';
 
 // Página "burra" de cancelamento (ADR-0005 #3). O link assinado vem do e-mail
 // ({{LINK_CANCELAMENTO}} do Brevo) no formato …/cancelar?t=<token>. Ao montar,
@@ -134,8 +135,13 @@ function ErrorState() {
         Algo deu errado
       </h1>
       <p className="mx-auto mt-5 max-w-lg text-lg leading-relaxed text-ink">
-        Não foi possível cancelar agora. Tente novamente mais tarde ou fale
-        conosco.
+        Não foi possível cancelar agora. Tente novamente mais tarde ou fale com
+        a gente pelo Instagram {CONTATO.instagram}, pelo WhatsApp{' '}
+        {CONTATO.whatsappLabel} ou por{' '}
+        <a href={CONTATO_EMAIL_HREF} className="font-semibold text-navy underline">
+          {CONTATO.email}
+        </a>
+        .
       </p>
       <BackButton />
     </>
