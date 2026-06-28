@@ -14,9 +14,22 @@ function required(name: string): string {
   return value;
 }
 
+// A ASAAS_API_KEY contém `$` (ex.: `$aact_...::$aach_...`). O Coolify tem um bug
+// conhecido que trunca/muta valores com `$` mesmo com a opção "Literal"
+// (coollabsio/coolify #1918, #3946, #4321). Workaround: passar a chave em base64
+// na env ASAAS_API_KEY_B64 (base64 não tem `$`) e decodificar aqui. Se a B64 não
+// existir, cai na ASAAS_API_KEY normal (dev local, onde o `.env` lida com `$` ok).
+function asaasApiKey(): string {
+  const b64 = process.env.ASAAS_API_KEY_B64;
+  if (b64) {
+    return Buffer.from(b64, 'base64').toString('utf8').trim();
+  }
+  return required('ASAAS_API_KEY');
+}
+
 export const env = {
   // Asaas — chave da API e token que o Asaas envia no header asaas-access-token
-  ASAAS_API_KEY: required('ASAAS_API_KEY'),
+  ASAAS_API_KEY: asaasApiKey(),
   ASAAS_WEBHOOK_TOKEN: required('ASAAS_WEBHOOK_TOKEN'),
   BREVO_API_KEY: required('BREVO_API_KEY'),
   FRONTEND_ORIGIN: required('FRONTEND_ORIGIN'),
