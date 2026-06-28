@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeE164 } from './phone.js';
+import { normalizeE164, toAsaasMobilePhone } from './phone.js';
 
 describe('normalizeE164', () => {
   describe('aceita e normaliza números E.164 válidos', () => {
@@ -50,5 +50,19 @@ describe('normalizeE164', () => {
     it('número curto demais', () => {
       expect(normalizeE164('+5511').ok).toBe(false);
     });
+  });
+});
+
+describe('toAsaasMobilePhone', () => {
+  it('remove o +55 de um número BR (Asaas quer DDD+número)', () => {
+    expect(toAsaasMobilePhone('+5511999998888')).toBe('11999998888');
+  });
+
+  it('remove o código de país de um número não-BR (melhor esforço)', () => {
+    expect(toAsaasMobilePhone('+351912345678')).toBe('912345678');
+  });
+
+  it('cai p/ só-dígitos quando não consegue parsear', () => {
+    expect(toAsaasMobilePhone('11999998888')).toBe('11999998888');
   });
 });

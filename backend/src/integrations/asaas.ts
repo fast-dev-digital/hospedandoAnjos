@@ -9,6 +9,7 @@
 // =============================================================================
 
 import { env } from '../config/env.js';
+import { toAsaasMobilePhone } from '../lib/phone.js';
 
 function headers() {
   return {
@@ -60,7 +61,9 @@ export async function findOrCreateCustomer(d: CustomerInput): Promise<string> {
     body: JSON.stringify({
       name: d.name,
       email: d.email,
-      mobilePhone: d.mobilePhone,
+      // Asaas espera o número NACIONAL (DDD+número), sem +55 — senão não preenche
+      // na página hospedada. Guardamos E.164; convertemos só na ida ao Asaas.
+      mobilePhone: toAsaasMobilePhone(d.mobilePhone),
       cpfCnpj: d.cpf,
     }),
   });

@@ -33,3 +33,15 @@ export function normalizeE164(raw: string): Result<string> {
 
   return { ok: true, value: phone.number }; // E.164 formatado pela lib
 }
+
+// O Asaas (gateway BR) preenche o campo de telefone na página hospedada a partir
+// do número NACIONAL (DDD + número), sem o código de país. Mandar o E.164 com
+// '+55' faz o Asaas não reconhecer/preencher. Este helper extrai o número
+// nacional do E.164 que guardamos. Ex.: '+5511999998888' -> '11999998888'.
+// Para números não-BR não há equivalente perfeito no Asaas; devolvemos o nacional
+// como melhor esforço (o E.164 completo segue no Brevo, que o Manychat usa).
+export function toAsaasMobilePhone(e164: string): string {
+  const phone = parsePhoneNumberFromString(e164);
+  if (!phone) return e164.replace(/\D/g, '');
+  return phone.nationalNumber;
+}

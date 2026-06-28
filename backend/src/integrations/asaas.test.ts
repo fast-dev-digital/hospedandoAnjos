@@ -64,7 +64,7 @@ describe('findOrCreateCustomer', () => {
     expect(sent).toMatchObject({
       name: 'Maria Silva',
       email: 'maria@exemplo.com',
-      mobilePhone: '+5511999998888',
+      mobilePhone: '11999998888', // E.164 sem +55: Asaas quer DDD+número nacional
       cpfCnpj: '12345678909', // o adapter mapeia cpf -> cpfCnpj (campo do Asaas)
     });
   });
