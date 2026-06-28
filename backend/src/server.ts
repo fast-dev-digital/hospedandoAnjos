@@ -9,6 +9,9 @@
 //   const app = createApp();
 //   app.listen(env.PORT, () => console.log(`API on :${env.PORT}`));
 // =============================================================================
+// Sentry primeiro: instrumenta o runtime antes de qualquer outro import (no-op
+// sem SENTRY_DSN). Ver instrument.ts.
+import "./instrument.js";
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 

@@ -40,4 +40,7 @@ export const env = {
   // base pública DESTA api; usada p/ montar o link de cancelamento gravado no Brevo.
   API_BASE_URL: process.env.API_BASE_URL ?? 'http://localhost:3000',
   PORT: Number(process.env.PORT ?? 3000),
+  // Sentry — monitoramento de erros. Opcional: sem DSN, o Sentry fica desligado
+  // (no-op). Setar no Coolify p/ ligar em produção. Ver instrument.ts.
+  SENTRY_DSN: process.env.SENTRY_DSN ?? '',
 } as const;
