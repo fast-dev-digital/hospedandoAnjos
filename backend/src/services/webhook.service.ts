@@ -16,6 +16,7 @@
 // =============================================================================
 
 import { getCustomer } from '../integrations/asaas.js';
+import { fromAsaasMobilePhone } from '../lib/phone.js';
 import { sendDonationEvent } from '../integrations/brevo.js';
 import {
   registerDonation,
@@ -57,7 +58,9 @@ export async function handleAsaasEvent(event: AsaasWebhookEvent): Promise<void> 
       await registerDonation({
         email: customer.email,
         name: customer.name ?? '',
-        whatsapp: customer.mobilePhone ?? '',
+        // o Asaas devolve o telefone sem +55 (foi assim que o gravamos); o Brevo/
+        // Manychat precisam do E.164 completo -> reconstrói o +55 aqui.
+        whatsapp: fromAsaasMobilePhone(customer.mobilePhone ?? ''),
         type: isRecorrente ? 'recorrente' : 'avulsa',
         // payment.value já vem em reais do Asaas; o Brevo guarda reais p/ o recibo.
         valorReais: payment.value,

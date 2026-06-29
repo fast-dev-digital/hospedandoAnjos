@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeE164, toAsaasMobilePhone } from './phone.js';
+import { normalizeE164, toAsaasMobilePhone, fromAsaasMobilePhone } from './phone.js';
 
 describe('normalizeE164', () => {
   describe('aceita e normaliza números E.164 válidos', () => {
@@ -64,5 +64,23 @@ describe('toAsaasMobilePhone', () => {
 
   it('cai p/ só-dígitos quando não consegue parsear', () => {
     expect(toAsaasMobilePhone('11999998888')).toBe('11999998888');
+  });
+});
+
+describe('fromAsaasMobilePhone', () => {
+  it('reconstrói o +55 a partir do número nacional do Asaas', () => {
+    expect(fromAsaasMobilePhone('19986031086')).toBe('+5519986031086');
+  });
+
+  it('não duplica o 55 se já vier com código de país', () => {
+    expect(fromAsaasMobilePhone('5519986031086')).toBe('+5519986031086');
+  });
+
+  it('limpa máscara antes de montar', () => {
+    expect(fromAsaasMobilePhone('(19) 98603-1086')).toBe('+5519986031086');
+  });
+
+  it('vazio -> string vazia', () => {
+    expect(fromAsaasMobilePhone('')).toBe('');
   });
 });

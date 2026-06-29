@@ -45,3 +45,16 @@ export function toAsaasMobilePhone(e164: string): string {
   if (!phone) return e164.replace(/\D/g, '');
   return phone.nationalNumber;
 }
+
+// Inverso do toAsaasMobilePhone: o Asaas GUARDA e devolve o telefone como número
+// NACIONAL (sem +55), porque é assim que o enviamos. Ao ler de volta no webhook
+// para gravar no Brevo, reconstruímos o E.164 (+55) — o Brevo/Manychat dependem
+// do número internacional completo (o n8n monta o subscriber a partir dele).
+// Assume Brasil (+55), que é o público; se já vier com o 55, não duplica.
+// Ex.: '19986031086' -> '+5519986031086'.
+export function fromAsaasMobilePhone(asaasPhone: string): string {
+  const digits = asaasPhone.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('55') && digits.length >= 12) return '+' + digits;
+  return '+55' + digits;
+}
