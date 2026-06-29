@@ -3,7 +3,7 @@ import type { DonationType } from '@shared/checkout-contract';
 // Mínimos definidos no CONTEXT.md (em centavos). O backend SEMPRE revalida —
 // aqui é só para UX (desabilitar botão, mostrar aviso).
 export const MIN_CENTS: Record<DonationType, number> = {
-  avulsa: 100, // R$ 1,00
+  avulsa: 500, // R$ 5,00 (mínimo do Asaas p/ PIX/cartão na avulsa)
   recorrente: 2000, // R$ 20,00
 };
 

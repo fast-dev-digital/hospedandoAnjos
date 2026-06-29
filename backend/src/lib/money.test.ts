@@ -3,17 +3,17 @@ import { validateAmount } from './money.js';
 import type { DonationType } from '../../../shared/checkout-contract.js';
 
 describe('validateAmount', () => {
-  describe('avulsa (mínimo R$1,00 = 100 centavos)', () => {
-    it('aceita exatamente 100', () => {
-      expect(validateAmount('avulsa', 100)).toEqual({ ok: true });
+  describe('avulsa (mínimo R$5,00 = 500 centavos)', () => {
+    it('aceita exatamente 500', () => {
+      expect(validateAmount('avulsa', 500)).toEqual({ ok: true });
     });
 
     it('aceita acima do mínimo', () => {
       expect(validateAmount('avulsa', 5000)).toEqual({ ok: true });
     });
 
-    it('rejeita abaixo do mínimo (99)', () => {
-      expect(validateAmount('avulsa', 99).ok).toBe(false);
+    it('rejeita abaixo do mínimo do Asaas (499)', () => {
+      expect(validateAmount('avulsa', 499).ok).toBe(false);
     });
   });
 

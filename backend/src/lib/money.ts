@@ -21,7 +21,9 @@
 import type { DonationType } from '../../../shared/checkout-contract.js';
 import type { Result } from './result.js';
 
-const MIN_AVULSA = 100; // R$1,00
+// R$5,00: mínimo do Asaas p/ billingType UNDEFINED ("Pergunte ao Cliente").
+// Abaixo disso o Asaas rejeita com 400 -> 500 no checkout. Validar aqui evita isso.
+const MIN_AVULSA = 500; // R$5,00
 const MIN_RECORRENTE = 2000; // R$20,00
 
 // NOTA: a conversão reais->centavos é feita no FRONTEND (parseToCents). O backend
