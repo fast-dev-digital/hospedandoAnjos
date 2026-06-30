@@ -17,11 +17,13 @@
 
 import { getCustomer } from '../integrations/asaas.js';
 import { fromAsaasMobilePhone } from '../lib/phone.js';
-import { sendDonationEvent } from '../integrations/brevo.js';
+import { sendReceiptEmail } from '../integrations/brevo.js';
+import { sendWhatsAppReceipt } from '../integrations/n8n.js';
 import {
   registerDonation,
   markPaymentFailed,
   markSubscriptionInactive,
+  linkCancelamento,
 } from './donor.service.js';
 
 // Formato (parcial) do webhook do Asaas. Só tipamos o que usamos; o resto do
@@ -55,13 +57,20 @@ export async function handleAsaasEvent(event: AsaasWebhookEvent): Promise<void> 
       // discriminador avulsa/recorrente: `subscription` preenchido => recorrente.
       const isRecorrente = payment.subscription != null;
 
+      // o Asaas devolve o telefone sem +55 (foi assim que o gravamos); o Brevo/
+      // Manychat precisam do E.164 completo -> reconstrói o +55 aqui.
+      const whatsapp = fromAsaasMobilePhone(customer.mobilePhone ?? '');
+      const tipo = isRecorrente ? 'recorrente' : 'avulsa';
+      // link de cancelamento só existe na recorrente (tem subscription).
+      const link = payment.subscription
+        ? linkCancelamento(payment.subscription)
+        : undefined;
+
       await registerDonation({
         email: customer.email,
         name: customer.name ?? '',
-        // o Asaas devolve o telefone sem +55 (foi assim que o gravamos); o Brevo/
-        // Manychat precisam do E.164 completo -> reconstrói o +55 aqui.
-        whatsapp: fromAsaasMobilePhone(customer.mobilePhone ?? ''),
-        type: isRecorrente ? 'recorrente' : 'avulsa',
+        whatsapp,
+        type: tipo,
         // payment.value já vem em reais do Asaas; o Brevo guarda reais p/ o recibo.
         valorReais: payment.value,
         // o subscription_id (gravado no Brevo p/ o link de cancelamento) só existe
@@ -70,14 +79,24 @@ export async function handleAsaasEvent(event: AsaasWebhookEvent): Promise<void> 
         date: new Date().toISOString(),
       });
 
-      // dispara o evento que aciona o recibo no Brevo. Roda em TODA doação
-      // confirmada (avulsa, recorrente e renovação) — é o que o usuário precisa.
-      // O LINK_CANCELAMENTO o recibo lê do contato ({{contact.LINK_CANCELAMENTO}}),
-      // já gravado pelo registerDonation acima; aqui mandamos só o que varia.
-      await sendDonationEvent(customer.email, {
+      // RECIBO: e-mail transacional (instantâneo) + WhatsApp via n8n (instantâneo).
+      // Substitui a automação de marketing do Brevo (que tinha 11-26 min de latência
+      // e era instável). Roda em TODA doação confirmada (avulsa, recorrente, renovação).
+      await sendReceiptEmail(customer.email, {
         NOME: customer.name ?? '',
         VALOR: payment.value,
-        TIPO: isRecorrente ? 'recorrente' : 'avulsa',
+        TIPO: tipo,
+        LINK_CANCELAMENTO: link,
+      });
+      await sendWhatsAppReceipt({
+        email: customer.email,
+        attributes: {
+          NOME: customer.name ?? '',
+          WHATSAPP_NUM: whatsapp,
+          VALOR_ULTIMA: payment.value,
+          TIPO_ULTIMA: tipo,
+          LINK_CANCELAMENTO: link,
+        },
       });
       return;
     }

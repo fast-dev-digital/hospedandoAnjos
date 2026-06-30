@@ -22,7 +22,7 @@ import type { DonationType } from '../../../shared/checkout-contract.js';
 // e-mail; ao clicar, a página do front abre e repassa o MESMO token ao
 // GET {API_BASE_URL}/cancelar, que valida e chama DELETE /subscriptions/{id}.
 // (Se apontasse p/ a API, o doador veria o JSON cru em vez da página.)
-function linkCancelamento(subscriptionId: string): string {
+export function linkCancelamento(subscriptionId: string): string {
   return `${env.FRONTEND_ORIGIN}/cancelar?t=${signSubscriptionToken(subscriptionId)}`;
 }
 

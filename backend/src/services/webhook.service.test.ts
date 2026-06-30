@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleAsaasEvent } from './webhook.service.js';
 import { getCustomer } from '../integrations/asaas.js';
+import { sendReceiptEmail } from '../integrations/brevo.js';
+import { sendWhatsAppReceipt } from '../integrations/n8n.js';
 import {
   registerDonation,
   markPaymentFailed,
@@ -10,16 +12,22 @@ import {
 // Mockamos o adapter do Asaas e o donor.service: o teste verifica o ROTEAMENTO do
 // evento (qual ação dispara, com quais dados), não o HTTP nem a regra do Brevo.
 vi.mock('../integrations/asaas.js', () => ({ getCustomer: vi.fn() }));
+vi.mock('../integrations/brevo.js', () => ({ sendReceiptEmail: vi.fn() }));
+vi.mock('../integrations/n8n.js', () => ({ sendWhatsAppReceipt: vi.fn() }));
 vi.mock('./donor.service.js', () => ({
   registerDonation: vi.fn(),
   markPaymentFailed: vi.fn(),
   markSubscriptionInactive: vi.fn(),
+  // o webhook usa linkCancelamento p/ montar o LINK_CANCELAMENTO do recibo.
+  linkCancelamento: vi.fn((id: string) => `https://front/cancelar?t=tok_${id}`),
 }));
 
 const mockGetCustomer = vi.mocked(getCustomer);
 const mockRegister = vi.mocked(registerDonation);
 const mockFailed = vi.mocked(markPaymentFailed);
 const mockInactive = vi.mocked(markSubscriptionInactive);
+const mockEmail = vi.mocked(sendReceiptEmail);
+const mockWhats = vi.mocked(sendWhatsAppReceipt);
 
 // cliente padrão devolvido pelo getCustomer (fonte da verdade do doador).
 const customer = {
@@ -66,6 +74,44 @@ describe('PAYMENT_CONFIRMED (#8)', () => {
         type: 'recorrente',
         valorReais: 20,
         subscriptionId: 'sub_99',
+      }),
+    );
+  });
+
+  it('dispara recibo: e-mail transacional + WhatsApp (avulsa, sem link)', async () => {
+    await handleAsaasEvent({
+      event: 'PAYMENT_CONFIRMED',
+      payment: { customer: 'cus_1', value: 50, subscription: null },
+    });
+
+    expect(mockEmail).toHaveBeenCalledWith('maria@exemplo.com', {
+      NOME: 'Maria Silva',
+      VALOR: 50,
+      TIPO: 'avulsa',
+      LINK_CANCELAMENTO: undefined,
+    });
+    expect(mockWhats).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'maria@exemplo.com',
+        attributes: expect.objectContaining({
+          WHATSAPP_NUM: '+5511999998888',
+          TIPO_ULTIMA: 'avulsa',
+        }),
+      }),
+    );
+  });
+
+  it('recorrente: recibo leva LINK_CANCELAMENTO montado do subscription', async () => {
+    await handleAsaasEvent({
+      event: 'PAYMENT_CONFIRMED',
+      payment: { customer: 'cus_1', value: 20, subscription: 'sub_99' },
+    });
+
+    expect(mockEmail).toHaveBeenCalledWith(
+      'maria@exemplo.com',
+      expect.objectContaining({
+        TIPO: 'recorrente',
+        LINK_CANCELAMENTO: 'https://front/cancelar?t=tok_sub_99',
       }),
     );
   });

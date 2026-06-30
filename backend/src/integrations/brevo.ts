@@ -57,29 +57,33 @@ export async function getContact(email: string): Promise<BrevoAttributes | null>
   return data.attributes ?? {};
 }
 
-// Dispara um evento no Brevo (API moderna POST /v3/events, mesma api-key da API
-// normal — NÃO usa a ma-key legada do trackEvent). É o GATILHO do recibo: a
-// automação do Brevo usa "um evento foi rastreado" (event_name=doacao_confirmada)
-// e dispara em TODA doação — avulsa, recorrente E renovação mensal (ao contrário
-// de "adicionado à lista", que só dispara na 1ª vez). As `event_properties` ficam
-// disponíveis no template do recibo (NOME, VALOR, etc.).
-export async function sendDonationEvent(
+// Envia o RECIBO por e-mail TRANSACIONAL (POST /v3/smtp/email com templateId).
+// Caminho direto e INSTANTÂNEO — substitui a automação de marketing do Brevo, que
+// tinha latência de 11-26 min e disparava de forma instável (gatilho de evento não
+// confiável; comprovado em prod). O template (env.BREVO_RECEIPT_TEMPLATE_ID) usa
+// {{ params.X }}: NOME, VALOR, TIPO, LINK_CANCELAMENTO. Roda em TODA doação
+// confirmada (avulsa, recorrente e renovação). Não relança erro fatal: o recibo
+// não pode derrubar o webhook (o cadastro no Brevo já foi feito); só registra.
+export async function sendReceiptEmail(
   email: string,
-  properties: Record<string, string | number>,
+  params: {
+    NOME: string;
+    VALOR: number;
+    TIPO: string;
+    LINK_CANCELAMENTO?: string;
+  },
 ): Promise<void> {
-  const res = await fetch(`${BASE}/events`, {
+  const res = await fetch(`${BASE}/smtp/email`, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
-      event_name: 'doacao_confirmada',
-      identifiers: { email_id: email },
-      event_properties: properties,
+      to: [{ email }],
+      templateId: env.BREVO_RECEIPT_TEMPLATE_ID,
+      params,
     }),
   });
 
-  // /v3/events responde 204 No Content em sucesso. Não relança erro fatal: o recibo
-  // não pode derrubar o webhook (o cadastro no Brevo já foi feito); só registra.
-  if (!res.ok && res.status !== 204) {
-    console.error(`Brevo sendDonationEvent falhou (${res.status}): ${await res.text()}`);
+  if (!res.ok) {
+    console.error(`Brevo sendReceiptEmail falhou (${res.status}): ${await res.text()}`);
   }
 }

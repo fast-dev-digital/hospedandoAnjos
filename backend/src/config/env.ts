@@ -32,6 +32,13 @@ export const env = {
   ASAAS_API_KEY: asaasApiKey(),
   ASAAS_WEBHOOK_TOKEN: required('ASAAS_WEBHOOK_TOKEN'),
   BREVO_API_KEY: required('BREVO_API_KEY'),
+  // ID do template TRANSACIONAL do recibo (Brevo → Transacional → Templates).
+  // O recibo é enviado direto via POST /v3/smtp/email (instantâneo), NÃO pela
+  // automação de marketing (que tinha 11-26 min de latência e era instável).
+  BREVO_RECEIPT_TEMPLATE_ID: Number(process.env.BREVO_RECEIPT_TEMPLATE_ID ?? 7),
+  // URL do webhook do n8n que envia o recibo por WhatsApp (Manychat). O backend
+  // chama direto no PAYMENT_CONFIRMED (instantâneo), sem passar pela automação Brevo.
+  N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL ?? '',
   FRONTEND_ORIGIN: required('FRONTEND_ORIGIN'),
   // segredo p/ assinar o token do link de cancelamento (HMAC). Fica só no backend.
   BILLING_LINK_SECRET: required('BILLING_LINK_SECRET'),
