@@ -146,10 +146,40 @@ describe('SUBSCRIPTION_DELETED (#9)', () => {
   });
 });
 
-describe('eventos ignorados', () => {
-  it('não faz nada num evento não mapeado (ex.: PAYMENT_RECEIVED)', async () => {
+describe('PAYMENT_RECEIVED (bug PIX): PIX cai só aqui, sem passar pelo CONFIRMED', () => {
+  it('PIX: registra a doação e dispara recibo (o PIX não emite CONFIRMED)', async () => {
     await handleAsaasEvent({
       event: 'PAYMENT_RECEIVED',
+      payment: { customer: 'cus_1', value: 50, subscription: null, billingType: 'PIX' },
+    });
+    expect(mockRegister).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'avulsa', valorReais: 50 }),
+    );
+    expect(mockEmail).toHaveBeenCalled();
+  });
+
+  it('cartão: NÃO reprocessa no RECEIVED (o CONFIRMED já cadastrou; evita recibo dobrado)', async () => {
+    await handleAsaasEvent({
+      event: 'PAYMENT_RECEIVED',
+      payment: { customer: 'cus_1', value: 50, subscription: null, billingType: 'CREDIT_CARD' },
+    });
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(mockEmail).not.toHaveBeenCalled();
+  });
+
+  it('boleto: NÃO reprocessa no RECEIVED (idem cartão)', async () => {
+    await handleAsaasEvent({
+      event: 'PAYMENT_RECEIVED',
+      payment: { customer: 'cus_1', value: 50, subscription: null, billingType: 'BOLETO' },
+    });
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
+});
+
+describe('eventos ignorados', () => {
+  it('não faz nada num evento não mapeado (ex.: PAYMENT_CREATED)', async () => {
+    await handleAsaasEvent({
+      event: 'PAYMENT_CREATED',
       payment: { customer: 'cus_1', value: 50, subscription: null },
     });
     expect(mockRegister).not.toHaveBeenCalled();
